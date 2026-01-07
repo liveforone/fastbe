@@ -72,7 +72,8 @@ export class PostService {
   }
 
   /**
-   * You have to setReplySerializer setting in server.ts
+   * You have to add "setReplySerializer" setting in server.ts
+   * This make bigint type work.
    */
   static async getAllPostPages(lastId?: bigint): Promise<PostPageDto> {
     const posts = await withPrismaError(() =>

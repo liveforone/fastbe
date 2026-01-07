@@ -3,6 +3,7 @@ import { assertCreatePostDto } from "../dto/post/createPost.dto.js";
 import { authGuard } from "../plugins/auth.guard.js";
 import { PostService } from "../services/post.service.js";
 import { assertUpdatePostDto } from "../dto/post/updatePost.dto.js";
+import { IPostPageQuerystring, IPostParams, IPostSearchQuerystring } from "./constant/post.route.constant.js";
 
 export async function postRoutes(app: FastifyInstance) {
   app.post("/create", { preHandler: authGuard }, async (req, reply) => {
@@ -14,7 +15,7 @@ export async function postRoutes(app: FastifyInstance) {
     reply.send({ ok: true });
   });
 
-  app.put<{ Params: { id: bigint } }>(
+  app.put<{ Params: IPostParams }>(
     "/:id",
     { preHandler: authGuard },
     async (req, reply) => {
@@ -28,7 +29,7 @@ export async function postRoutes(app: FastifyInstance) {
     }
   );
 
-  app.delete<{ Params: { id: bigint } }>(
+  app.delete<{ Params: IPostParams }>(
     "/:id",
     { preHandler: authGuard },
     async (req, reply) => {
@@ -41,14 +42,16 @@ export async function postRoutes(app: FastifyInstance) {
     }
   );
 
-  app.get<{ Params: { id: bigint } }>("/:id", async (req, reply) => {
+  // app.get<{ Params: { id: bigint } }> is Same.
+  app.get<{ Params: IPostParams }>("/:id", async (req, reply) => {
     const { id } = req.params;
     const post = await PostService.getPostById(id);
 
     reply.send(post);
   });
 
-  app.get<{ Querystring: { "last-id"?: bigint } }>("/", async (req, reply) => {
+  // app.get<{ Querystrig: { "last-id"?: bigint } }> is Same.
+  app.get<{ Querystring: IPostPageQuerystring }>("/", async (req, reply) => {
     const lastId = req.query["last-id"]
       ? BigInt(req.query["last-id"])
       : undefined;
@@ -58,7 +61,7 @@ export async function postRoutes(app: FastifyInstance) {
     reply.send(postPages);
   });
 
-  app.get<{ Querystring: { "last-id"?: bigint } }>(
+  app.get<{ Querystring: IPostPageQuerystring }>(
     "/writers",
     { preHandler: authGuard },
     async (req, reply) => {
@@ -76,7 +79,8 @@ export async function postRoutes(app: FastifyInstance) {
     }
   );
 
-  app.get<{ Querystring: { keyword: string; "last-id"?: bigint } }>(
+  // app.get<{ Querystrig: { keyword: string; "last-id"?: bigint } }> is Same.
+  app.get<{ Querystring: IPostSearchQuerystring }>(
     "/search",
     async (req, reply) => {
       const { keyword } = req.query;
