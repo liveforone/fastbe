@@ -15,7 +15,7 @@
 
 - `npm init -y`
 - `npm install fastify @fastify/jwt @fastify/cookie @fastify/cors bcrypt ioredis pg dotenv pino pino-pretty`
-- `npm install prisma @prisma/client @prisma/adapter-pg`
+- `npm install prisma @prisma/client @prisma/adapter-pg prisma-common-error-handle`
 - `npm install -D typescript ts-node @types/node @types/bcrypt @types/pg vitest`
 
 ### Prisma setup
