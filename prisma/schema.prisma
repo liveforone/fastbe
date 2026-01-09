@@ -32,7 +32,7 @@ model post {
   content      String
   post_state   post_state @default(ORIGINAL)
   writer_id    String
-  created_date DateTime   @default(now()) @db.Timestamptz(6)
+  created_date DateTime   @default(now()) @db.Timestamptz(3)
 
   writer users @relation(fields: [writer_id], references: [id], onDelete: Cascade)
 }
