@@ -4,7 +4,7 @@
   "description": "Fastify based Fast Backend boilerplate & template.",
   "scripts": {
     "dev": "tsx watch src/server.ts | pino-pretty",
-    "build": "npx prisma generate && tsc",
+    "build": "npx prisma generate && npx prisma db push && tsc",
     "start": "node dist/src/server.js | pino-pretty",
     "test": "npx prisma migrate reset --force && npx prisma generate && sleep 2 && npx vitest src/__test__/"
   },
