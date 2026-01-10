@@ -9,11 +9,23 @@ import { postRoutes } from "./routes/post.route.js";
 const app = Fastify({
   logger: true,
 });
-app.setReplySerializer((payload) =>
-  JSON.stringify(payload, (_, value) =>
+app.setReplySerializer((payload) => {
+  if (payload === undefined || payload === null) {
+    return "";
+  }
+
+  return JSON.stringify(payload, (_, value) =>
     typeof value === "bigint" ? value.toString() : value
-  )
-);
+  );
+});
+/**
+ * This code is example of unusing cookie and jwt.
+ * No user authentication service use this code.
+ */
+// await app.register(cors, {
+//   origin: ["http://localhost:5173", "https://real.frontend.url"],
+//   methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
+// });
 app.register(cors, {
   origin: (origin, cb) => {
     if (!origin) return cb(null, true);
@@ -34,6 +46,6 @@ app.register(postRoutes, { prefix: "/posts" });
 app.setErrorHandler((error: any, request, reply) => {
   reply.status(error.statusCode || 500).send({ error: error.message });
 });
-app.listen({ port: 8080 }, () => {
+app.listen({ port: 8080, host: "0.0.0.0" }, () => {
   console.log("http://localhost:8080");
 });
