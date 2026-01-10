@@ -1,10 +1,10 @@
 {
   "name": "fastbe",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Fastify based Fast Backend boilerplate & template.",
   "scripts": {
     "dev": "tsx watch src/server.ts | pino-pretty",
-    "build": "npx prisma generate && npx prisma db push && tsc",
+    "build": "npx prisma generate && npx prisma migrate deploy --schema ./prisma && npx prisma db push && tsc",
     "start": "node dist/src/server.js | pino-pretty",
     "test": "npx prisma migrate reset --force && npx prisma generate && sleep 2 && npx vitest src/__test__/"
   },
