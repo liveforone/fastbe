@@ -4,6 +4,11 @@ import { assertLoginDto } from "../dto/auth/login.dto.js";
 import { authGuard } from "../plugins/auth.guard.js";
 import { assertUpdatePasswordDto } from "../dto/auth/updatePassword.dto.js";
 import { AuthService } from "../services/auth.service.js";
+import {
+  createTokenPayload,
+  RefreshTokenPayload,
+} from "../type/payload.type.js";
+import { AuthUser } from "../type/authUser.type.js";
 
 export async function authRoutes(app: FastifyInstance) {
   app.post("/signup", async (req, reply) => {
@@ -14,18 +19,16 @@ export async function authRoutes(app: FastifyInstance) {
 
   app.post("/login", async (req, reply) => {
     assertLoginDto(req.body);
+
     const user = await AuthService.login(req.body);
-    const accessToken = app.jwt.sign(
-      { username: user.username },
-      { expiresIn: "15m" }
-    );
 
-    const refreshToken = app.jwt.sign(
-      { username: user.username },
-      { expiresIn: "7d" }
-    );
+    const accessPayload = createTokenPayload(user.id, "access");
+    const accessToken = app.jwt.sign(accessPayload, { expiresIn: "15m" });
 
-    await AuthService.saveRefreshToken(user.username, refreshToken);
+    const refreshPayload = createTokenPayload(user.id, "refresh");
+    const refreshToken = app.jwt.sign(refreshPayload, { expiresIn: "7d" });
+
+    await AuthService.saveRefreshToken(user.id, refreshToken);
 
     reply
       .setCookie("refreshToken", refreshToken, {
@@ -43,25 +46,23 @@ export async function authRoutes(app: FastifyInstance) {
       return reply.status(401).send({ error: "Refresh Token Not Found" });
     }
 
-    let payload: { username: string };
+    let payload: RefreshTokenPayload;
     try {
       payload = app.jwt.verify<any>(refreshToken);
     } catch {
       return reply.status(401).send({ error: "Invalid refresh token" });
     }
-    await AuthService.validRefreshToken(payload.username, refreshToken);
+    await AuthService.validRefreshToken(payload.id, refreshToken);
 
-    const user = await AuthService.getUsersByUsername(payload.username);
-    const newAccessToken = app.jwt.sign(
-      { username: user.username },
-      { expiresIn: "15m" }
-    );
+    const user = await AuthService.getUsersById(payload.id);
 
-    const newRefreshToken = app.jwt.sign(
-      { username: user.username },
-      { expiresIn: "7d" }
-    );
-    await AuthService.saveRefreshToken(user.username, newRefreshToken);
+    const accessPayload = createTokenPayload(user.id, "access");
+    const newAccessToken = app.jwt.sign(accessPayload, { expiresIn: "15m" });
+
+    const refreshPayload = createTokenPayload(user.id, "refresh");
+    const newRefreshToken = app.jwt.sign(refreshPayload, { expiresIn: "7d" });
+
+    await AuthService.saveRefreshToken(user.id, newRefreshToken);
 
     reply
       .setCookie("refreshToken", newRefreshToken, {
@@ -81,7 +82,7 @@ export async function authRoutes(app: FastifyInstance) {
 
     try {
       const payload = app.jwt.verify<any>(refreshToken);
-      await AuthService.removeRefreshToken(payload.username);
+      await AuthService.removeRefreshToken(payload.id);
     } catch {
       return reply.status(401).send({ error: "Invalid refresh token" });
     }
@@ -99,8 +100,8 @@ export async function authRoutes(app: FastifyInstance) {
     async (req, reply) => {
       assertUpdatePasswordDto(req.body);
 
-      const { username } = req.user as { username: string };
-      await AuthService.updatePassword(req.body, username);
+      const { id } = req.user as AuthUser;
+      await AuthService.updatePassword(req.body, id);
 
       reply.send({ ok: true });
     }

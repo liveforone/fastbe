@@ -3,14 +3,19 @@ import { assertCreatePostDto } from "../dto/post/createPost.dto.js";
 import { authGuard } from "../plugins/auth.guard.js";
 import { PostService } from "../services/post.service.js";
 import { assertUpdatePostDto } from "../dto/post/updatePost.dto.js";
-import { IPostPageQuerystring, IPostParams, IPostSearchQuerystring } from "./constant/post.route.constant.js";
+import {
+  IPostPageQuerystring,
+  IPostParams,
+  IPostSearchQuerystring,
+} from "./constant/post.route.constant.js";
+import { AuthUser } from "../type/authUser.type.js";
 
 export async function postRoutes(app: FastifyInstance) {
   app.post("/create", { preHandler: authGuard }, async (req, reply) => {
     assertCreatePostDto(req.body);
 
-    const { username } = req.user as { username: string };
-    await PostService.createPost(req.body, username);
+    const { id } = req.user as AuthUser;
+    await PostService.createPost(req.body, id);
 
     reply.send({ ok: true });
   });
@@ -21,9 +26,9 @@ export async function postRoutes(app: FastifyInstance) {
     async (req, reply) => {
       assertUpdatePostDto(req.body);
       const { id } = req.params;
-      const { username } = req.user as { username: string };
+      const userId = (req.user as AuthUser).id;
 
-      await PostService.updatePost(req.body, id, username);
+      await PostService.updatePost(req.body, id, userId);
 
       reply.send({ ok: true });
     }
@@ -34,9 +39,9 @@ export async function postRoutes(app: FastifyInstance) {
     { preHandler: authGuard },
     async (req, reply) => {
       const { id } = req.params;
-      const { username } = req.user as { username: string };
+      const userId = (req.user as AuthUser).id;
 
-      await PostService.removePost(id, username);
+      await PostService.removePost(id, userId);
 
       reply.send({ ok: true });
     }
@@ -57,7 +62,6 @@ export async function postRoutes(app: FastifyInstance) {
       : undefined;
 
     const postPages = await PostService.getAllPostPages(lastId);
-
     reply.send(postPages);
   });
 
@@ -68,13 +72,9 @@ export async function postRoutes(app: FastifyInstance) {
       const lastId = req.query["last-id"]
         ? BigInt(req.query["last-id"])
         : undefined;
-      const { username } = req.user as { username: string };
+      const userId = (req.user as AuthUser).id;
 
-      const postPages = await PostService.getPostPagesByWriter(
-        username,
-        lastId
-      );
-
+      const postPages = await PostService.getPostPagesByWriter(userId, lastId);
       reply.send(postPages);
     }
   );
@@ -89,7 +89,6 @@ export async function postRoutes(app: FastifyInstance) {
         : undefined;
 
       const postPages = await PostService.searchPostPages(keyword, lastId);
-
       reply.send(postPages);
     }
   );

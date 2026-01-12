@@ -69,39 +69,5 @@ export async function authGuard(req: FastifyRequest, reply: FastifyReply) {
     return reply.status(mapping.status).send({
       error: mapping.code,
     });
-    // const name = error?.name;
-    // const message = (error as any)?.message;
-
-    // if (
-    //   name === "FST_JWT_AUTHORIZATION_TOKEN_EXPIRED" ||
-    //   message?.toLowerCase().includes("expired")
-    // ) {
-    //   const errorMsg = "TOKEN_EXPIRED";
-    //   logger.error(`Auth Guard occurs Error. Cause : ${errorMsg}`);
-    //   return reply.status(401).send({ error: errorMsg });
-    // }
-
-    // if (name === "FST_JWT_NO_AUTHORIZATION_IN_HEADER") {
-    //   const errorMsg = "NO_TOKEN_PROVIDED";
-    //   logger.error(`Auth Guard occurs Error. Cause : ${errorMsg}`);
-    //   return reply.status(401).send({ error: errorMsg });
-    // }
-
-    // if (name === "FST_JWT_BAD_REQUEST") {
-    //   const errorMsg = "BAD_TOKEN_FORMAT";
-    //   logger.error(`Auth Guard occurs Error. Cause : ${errorMsg}`);
-    //   return reply.status(400).send({ error: errorMsg });
-    // }
-
-    // if (name === "FST_JWT_AUTHORIZATION_TOKEN_INVALID") {
-    //   const errorMsg = "INVALID_TOKEN";
-    //   logger.error(`Auth Guard occurs Error. Cause : ${errorMsg}`);
-    //   return reply.status(401).send({ error: errorMsg });
-    // }
-
-    // // others
-    // const errorMsg = "UNAUTHORIZED";
-    // logger.error(`Auth Guard occurs Error. Cause : ${errorMsg}`);
-    // return reply.status(401).send({ error: errorMsg });
   }
 }

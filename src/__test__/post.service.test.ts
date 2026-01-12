@@ -26,18 +26,18 @@ describe("PostService Unit Test(Real DB / Redis)", () => {
     const username = "create_post_test";
     const password = "create_post_test_password";
     const signupDto: SignupDto = { username, password };
-    await AuthService.signup(signupDto);
+    const user = await AuthService.signup(signupDto);
 
     const title = "create_post_title";
     const content = "test_content";
     const createPostDto: CreatePostDto = { title, content };
-    const postId = await PostService.createPost(createPostDto, username);
+    const postId = await PostService.createPost(createPostDto, user.id);
 
     const post = await PostService.getPostById(postId);
     expect(post.id).toBe(postId);
   });
 
-  it("Create Post Test [Fail - Wrong username]", async () => {
+  it("Create Post Test [Fail - Wrong id]", async () => {
     const username = "create_post_fail_test";
     const password = "create_post_fail_test_password";
     const signupDto: SignupDto = { username, password };
@@ -47,9 +47,9 @@ describe("PostService Unit Test(Real DB / Redis)", () => {
     const content = "test_content";
     const createPostDto: CreatePostDto = { title, content };
     await expect(
-      PostService.createPost(createPostDto, "worng_username")
+      PostService.createPost(createPostDto, "worng_userId")
     ).rejects.toThrow(
-      "[P2025] The error indicates that an operation failed because it depends on one or more records that were required but not found. This typically occurs when there's a dependency between operations, such as when trying to perform an action that relies on the existence of specific records. Review the dependencies and ensure that all required records are present before attempting the operation to avoid this error."
+      "[P2003] The foreign key constraint has failed because the associated record does not exist in the referenced table. This indicates that the value being inserted or updated in the column with the foreign key constraint does not have a corresponding entry in the related table. Check the integrity of your data and ensure that all foreign key references are valid."
     );
   });
 
@@ -57,12 +57,12 @@ describe("PostService Unit Test(Real DB / Redis)", () => {
     const username = "update_post_test";
     const password = "update_post_test_password";
     const signupDto: SignupDto = { username, password };
-    await AuthService.signup(signupDto);
+    const user = await AuthService.signup(signupDto);
 
     const title = "update_post_title";
     const content = "test_content";
     const createPostDto: CreatePostDto = { title, content };
-    const postId = await PostService.createPost(createPostDto, username);
+    const postId = await PostService.createPost(createPostDto, user.id);
 
     const updatedTitle = "updated_title";
     const updatedContent = "updated_content";
@@ -70,7 +70,7 @@ describe("PostService Unit Test(Real DB / Redis)", () => {
       title: updatedTitle,
       content: updatedContent,
     };
-    await PostService.updatePost(updatePostDto, postId, username);
+    await PostService.updatePost(updatePostDto, postId, user.id);
     const post = await PostService.getPostById(postId);
     expect(post.title).toBe(updatedTitle);
     expect(post.content).toBe(updatedContent);
@@ -80,14 +80,14 @@ describe("PostService Unit Test(Real DB / Redis)", () => {
     const username = "remove_post_test";
     const password = "remove_post_test_password";
     const signupDto: SignupDto = { username, password };
-    await AuthService.signup(signupDto);
+    const user = await AuthService.signup(signupDto);
 
     const title = "remove_post_title";
     const content = "test_content";
     const createPostDto: CreatePostDto = { title, content };
-    const postId = await PostService.createPost(createPostDto, username);
+    const postId = await PostService.createPost(createPostDto, user.id);
 
-    await PostService.removePost(postId, username);
+    await PostService.removePost(postId, user.id);
     await expect(PostService.getPostById(postId)).rejects.toBeInstanceOf(
       CustomError
     );

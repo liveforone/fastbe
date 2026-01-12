@@ -10,14 +10,16 @@ import { UpdatePasswordDto } from "../dto/auth/updatePassword.dto.js";
 import { withPrismaError } from "../errors/prismaError.handle.js";
 
 export class AuthService {
-  static async signup(signupDto: SignupDto) {
+  static async signup(signupDto: SignupDto): Promise<users> {
     const { username, password } = signupDto;
     const hashedPassword = await this.hashPassword(password);
 
-    await withPrismaError(() =>
+    const user = await withPrismaError(() =>
       prisma.users.create({ data: { username, password: hashedPassword } })
     );
     logger.info(`User was created. Username : ${username}`);
+
+    return user;
   }
 
   static async login(loginDto: LoginDto): Promise<users> {
@@ -31,20 +33,15 @@ export class AuthService {
     return user;
   }
 
-  static async saveRefreshToken(username: string, refreshToken: string) {
-    await redis.set(
-      `refresh:${username}`,
-      refreshToken,
-      "EX",
-      7 * 24 * 60 * 60
-    );
+  static async saveRefreshToken(id: string, refreshToken: string) {
+    await redis.set(`refresh:${id}`, refreshToken, "EX", 7 * 24 * 60 * 60);
   }
 
-  static async validRefreshToken(username: string, refreshToken: string) {
-    const savedRefreshToken = await redis.get(`refresh:${username}`);
+  static async validRefreshToken(id: string, refreshToken: string) {
+    const savedRefreshToken = await redis.get(`refresh:${id}`);
 
     if (savedRefreshToken !== refreshToken) {
-      await redis.del(`refresh:${username}`);
+      await redis.del(`refresh:${id}`);
 
       const errorMsg = "Mismatch Refresh Token";
       logger.error(`Valid Refresh Token occurs Error. Casue : ${errorMsg}`);
@@ -52,27 +49,27 @@ export class AuthService {
     }
   }
 
-  static async getUsersByUsername(username: string): Promise<users> {
+  static async getUsersById(id: string): Promise<users> {
     return await withPrismaError(() =>
       prisma.users.findUniqueOrThrow({
-        where: { username: username },
+        where: { id: id },
       })
     );
   }
 
-  static async removeRefreshToken(username: string) {
-    await redis.del(`refresh:${username}`);
+  static async removeRefreshToken(id: string) {
+    await redis.del(`refresh:${id}`);
   }
 
   static async updatePassword(
     updatePasswordDto: UpdatePasswordDto,
-    username: string
+    id: string
   ) {
     const { originalPassword, newPassword } = updatePasswordDto;
     const hashedPassword = await withPrismaError(() =>
       prisma.users.findUniqueOrThrow({
         select: { password: true },
-        where: { username: username },
+        where: { id: id },
       })
     );
     await this.verifyPassword(originalPassword, hashedPassword.password);
@@ -80,12 +77,12 @@ export class AuthService {
     const hashedNewPassword = await this.hashPassword(newPassword);
     await withPrismaError(() =>
       prisma.users.update({
-        where: { username: username },
+        where: { id: id },
         data: { password: hashedNewPassword },
       })
     );
 
-    await redis.del(`refresh:${username}`);
+    await redis.del(`refresh:${id}`);
   }
 
   private static async verifyPassword(

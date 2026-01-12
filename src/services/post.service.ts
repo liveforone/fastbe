@@ -1,22 +1,18 @@
 import { prisma } from "../config/prisma.js";
 import { CreatePostDto } from "../dto/post/createPost.dto.js";
-import { PostInfoDto, toPostInfoDto } from "../dto/post/postInfo.dto.js";
+import { PostInfoDto } from "../dto/post/postInfo.dto.js";
 import { PostPageDto } from "../dto/post/postPage.dto.js";
-import { toPostSummaryDto } from "../dto/post/postSummary.dto.js";
 import { UpdatePostDto } from "../dto/post/updatePost.dto.js";
 import { withPrismaError } from "../errors/prismaError.handle.js";
 
 export class PostService {
   static async createPost(
     createPostDto: CreatePostDto,
-    username: string
+    userId: string
   ): Promise<bigint> {
     const { title, content } = createPostDto;
-    const user = await withPrismaError(() =>
-      prisma.users.findUniqueOrThrow({ where: { username: username } })
-    );
     const post = await withPrismaError(() =>
-      prisma.post.create({ data: { title, content, writer_id: user.id } })
+      prisma.post.create({ data: { title, content, writer_id: userId } })
     );
 
     return post.id;
@@ -25,16 +21,14 @@ export class PostService {
   static async updatePost(
     updatePostDto: UpdatePostDto,
     id: bigint,
-    username: string
+    userId: string
   ) {
     const { title, content } = updatePostDto;
     await withPrismaError(() =>
       prisma.post.updateMany({
         where: {
           id: id,
-          writer: {
-            username: username,
-          },
+          writer_id: userId,
         },
         data: {
           title: title,
@@ -45,30 +39,23 @@ export class PostService {
     );
   }
 
-  static async removePost(id: bigint, username: string) {
+  static async removePost(id: bigint, userId: string) {
     await withPrismaError(() =>
       prisma.post.deleteMany({
         where: {
           id: id,
-          writer: {
-            username: username,
-          },
+          writer_id: userId,
         },
       })
     );
   }
 
   static async getPostById(id: bigint): Promise<PostInfoDto> {
-    const post = await withPrismaError(() =>
+    return await withPrismaError(() =>
       prisma.post.findUniqueOrThrow({
         where: { id: id },
-        include: {
-          writer: true,
-        },
       })
     );
-
-    return toPostInfoDto(post);
   }
 
   /**
@@ -88,25 +75,17 @@ export class PostService {
           },
           skip: 1,
         }),
-        include: {
-          writer: {
-            select: {
-              username: true,
-            },
-          },
-        },
         omit: {
           content: true,
           post_state: true,
         },
       })
     );
-    const postSummaries = posts.map(toPostSummaryDto);
 
     const newLastId =
       posts.length > 0 ? posts[posts.length - 1].id : lastId ?? 0n;
     return {
-      postSummaries: postSummaries,
+      postSummaries: posts,
       metadata: {
         lastId: newLastId,
       },
@@ -114,12 +93,12 @@ export class PostService {
   }
 
   static async getPostPagesByWriter(
-    username: string,
+    userId: string,
     lastId?: bigint
   ): Promise<PostPageDto> {
     const posts = await withPrismaError(() =>
       prisma.post.findMany({
-        where: { writer: { username: username } },
+        where: { writer_id: userId },
         take: 10,
         orderBy: {
           id: "desc",
@@ -130,25 +109,17 @@ export class PostService {
           },
           skip: 1,
         }),
-        include: {
-          writer: {
-            select: {
-              username: true,
-            },
-          },
-        },
         omit: {
           content: true,
           post_state: true,
         },
       })
     );
-    const postSummaries = posts.map(toPostSummaryDto);
 
     const newLastId =
       posts.length > 0 ? posts[posts.length - 1].id : lastId ?? 0n;
     return {
-      postSummaries: postSummaries,
+      postSummaries: posts,
       metadata: {
         lastId: newLastId,
       },
@@ -172,25 +143,17 @@ export class PostService {
           },
           skip: 1,
         }),
-        include: {
-          writer: {
-            select: {
-              username: true,
-            },
-          },
-        },
         omit: {
           content: true,
           post_state: true,
         },
       })
     );
-    const postSummaries = posts.map(toPostSummaryDto);
 
     const newLastId =
       posts.length > 0 ? posts[posts.length - 1].id : lastId ?? 0n;
     return {
-      postSummaries: postSummaries,
+      postSummaries: posts,
       metadata: {
         lastId: newLastId,
       },

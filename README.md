@@ -110,9 +110,9 @@ export default defineConfig({
 
 ```json
 {
-  "name": "fastbe",
+  "name": "input_ur_project_name",
   "version": "1.0.0",
-  "description": "Fastify based Fast Backend boilerplate & template.",
+  "description": "input_ur_project_description",
   "scripts": {
     "dev": "tsx watch src/server.ts | pino-pretty",
     "build": "npx prisma generate && npx prisma migrate deploy --schema ./prisma && npx prisma db push && tsc",
@@ -172,7 +172,7 @@ export default defineConfig({
 - User authentication is implemented using JWT.
 - The access token is delivered to the client via the response body,
 - while the refresh token is exchanged with the client via cookies.
-- On the server side, refresh tokens are stored in Redis.
+- On the server side, refresh tokens are stored in Redis(or RDB).
 - Accordingly, the client can store and use the access token in localStorage.
 - The client may optionally send an access token.
 - To enable authentication for a route, add `{ preHandler: authGuard }` to the routing configuration.
@@ -210,11 +210,15 @@ export default defineConfig({
 - The code below handles serialization by converting only bigint values to strings before returning the response to the client.
 
 ```typescript
-app.setReplySerializer((payload) =>
-  JSON.stringify(payload, (_, value) =>
+app.setReplySerializer((payload) => {
+  if (payload === undefined || payload === null) {
+    return "";
+  }
+
+  return JSON.stringify(payload, (_, value) =>
     typeof value === "bigint" ? value.toString() : value
-  )
-);
+  );
+});
 ```
 
 ### CORS Configuration and Cookie Setting
