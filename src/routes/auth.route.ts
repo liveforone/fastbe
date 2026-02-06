@@ -1,25 +1,25 @@
 import { FastifyInstance } from "fastify";
-import { assertSignupDto } from "../dto/auth/signup.dto.js";
-import { assertLoginDto } from "../dto/auth/login.dto.js";
 import { authGuard } from "../plugins/auth.guard.js";
-import { assertUpdatePasswordDto } from "../dto/auth/updatePassword.dto.js";
 import { AuthService } from "../services/auth.service.js";
 import {
   createTokenPayload,
   RefreshTokenPayload,
 } from "../type/payload.type.js";
 import { AuthUser } from "../type/authUser.type.js";
+import { Signup } from "../api/auth/signup.api.js";
+import { Login } from "../api/auth/login.api.js";
+import { Refresh } from "../api/auth/refresh.api.js";
+import { Logout } from "../api/auth/logout.api.js";
+import { UpdatePassword } from "../api/auth/update-password.api.js";
 
 export async function authRoutes(app: FastifyInstance) {
-  app.post("/signup", async (req, reply) => {
-    assertSignupDto(req.body);
-    await AuthService.signup(req.body);
+  app.post<{ Body: Signup.Request }>(Signup.PATH, async (req, reply) => {
+    const parsedBody = Signup.RequestSchema.parse(req.body);
+    await AuthService.signup(parsedBody);
     reply.send({ ok: true });
   });
 
-  app.post("/login", async (req, reply) => {
-    assertLoginDto(req.body);
-
+  app.post<{ Body: Login.Request }>(Login.PATH, async (req, reply) => {
     const user = await AuthService.login(req.body);
 
     const accessPayload = createTokenPayload(user.id, "access");
@@ -31,16 +31,16 @@ export async function authRoutes(app: FastifyInstance) {
     await AuthService.saveRefreshToken(user.id, refreshToken);
 
     reply
-      .setCookie("refreshToken", refreshToken, {
+      .setCookie(Login.COOKIE_NAME, refreshToken, {
         httpOnly: true,
         secure: false, //https -> true
         sameSite: "lax", //cross-site -> none + secure=true
         path: "/auth",
-      })
+      } satisfies Login.CookieOptions)
       .send({ accessToken });
   });
 
-  app.post("/refresh", async (req, reply) => {
+  app.post(Refresh.PATH, async (req, reply) => {
     const { refreshToken } = req.cookies;
     if (!refreshToken) {
       return reply.status(401).send({ error: "Refresh Token Not Found" });
@@ -65,16 +65,16 @@ export async function authRoutes(app: FastifyInstance) {
     await AuthService.saveRefreshToken(user.id, newRefreshToken);
 
     reply
-      .setCookie("refreshToken", newRefreshToken, {
+      .setCookie(Refresh.COOKIE_NAME, newRefreshToken, {
         httpOnly: true,
         sameSite: "lax",
         secure: false,
         path: "/auth",
-      })
+      } satisfies Refresh.CookieOptions)
       .send({ accessToken: newAccessToken });
   });
 
-  app.post("/logout", async (req, reply) => {
+  app.post(Logout.PATH, async (req, reply) => {
     const { refreshToken } = req.cookies;
     if (!refreshToken) {
       return reply.status(401).send({ error: "No RefreshToken" });
@@ -87,23 +87,21 @@ export async function authRoutes(app: FastifyInstance) {
       return reply.status(401).send({ error: "Invalid refresh token" });
     }
 
-    reply.clearCookie("refreshToken", {
+    reply.clearCookie(Logout.COOKIE_NAME, {
       path: "/auth",
-    });
+    } satisfies Logout.CookieOptions);
 
     reply.send({ ok: true });
   });
 
-  app.patch(
-    "/update/password",
+  app.patch<{ Body: UpdatePassword.Request }>(
+    UpdatePassword.PATH,
     { preHandler: authGuard },
     async (req, reply) => {
-      assertUpdatePasswordDto(req.body);
-
       const { id } = req.user as AuthUser;
       await AuthService.updatePassword(req.body, id);
 
       reply.send({ ok: true });
-    }
+    },
   );
 }

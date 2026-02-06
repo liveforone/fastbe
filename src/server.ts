@@ -5,6 +5,7 @@ import cookie from "@fastify/cookie";
 import cors from "@fastify/cors";
 import { authRoutes } from "./routes/auth.route.js";
 import { postRoutes } from "./routes/post.route.js";
+import { ZodError } from "zod/v3";
 
 const app = Fastify({
   logger: true,
@@ -15,7 +16,7 @@ app.setReplySerializer((payload) => {
   }
 
   return JSON.stringify(payload, (_, value) =>
-    typeof value === "bigint" ? value.toString() : value
+    typeof value === "bigint" ? value.toString() : value,
   );
 });
 /**
@@ -44,8 +45,23 @@ app.register(jwt, { secret: process.env.SECRET! });
 app.register(authRoutes, { prefix: "/auth" });
 app.register(postRoutes, { prefix: "/posts" });
 app.setErrorHandler((error: any, request, reply) => {
+  if (error instanceof ZodError) {
+    return reply.status(400).send({
+      error: "INVALID_DTO",
+      issues: error.issues,
+    });
+  }
   reply.status(error.statusCode || 500).send({ error: error.message });
 });
-app.listen({ port: 8080, host: "0.0.0.0" }, () => {
-  console.log("http://localhost:8080");
-});
+
+async function bootstrap() {
+  try {
+    await app.listen({ port: 8080, host: "0.0.0.0" });
+    console.log("Server listening on http://localhost:8080");
+  } catch (err) {
+    app.log.error(err);
+    process.exit(1);
+  }
+}
+
+bootstrap();
