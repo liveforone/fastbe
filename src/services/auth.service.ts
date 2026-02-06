@@ -4,30 +4,30 @@ import { CustomError } from "../errors/custom.error.js";
 import { redis } from "../config/redis.js";
 import { users } from "../../generated/prisma/client.js";
 import { logger } from "../config/logger.js";
-import { SignupDto } from "../dto/auth/signup.dto.js";
-import { LoginDto } from "../dto/auth/login.dto.js";
-import { UpdatePasswordDto } from "../dto/auth/updatePassword.dto.js";
 import { withPrismaError } from "../errors/prismaError.handle.js";
+import { Signup } from "../api/auth/signup.api.js";
+import { Login } from "../api/auth/login.api.js";
+import { UpdatePassword } from "../api/auth/update-password.api.js";
 
 export class AuthService {
-  static async signup(signupDto: SignupDto): Promise<users> {
+  static async signup(signupDto: Signup.Request): Promise<users> {
     const { username, password } = signupDto;
     const hashedPassword = await this.hashPassword(password);
 
     const user = await withPrismaError(() =>
-      prisma.users.create({ data: { username, password: hashedPassword } })
+      prisma.users.create({ data: { username, password: hashedPassword } }),
     );
     logger.info(`User was created. Username : ${username}`);
 
     return user;
   }
 
-  static async login(loginDto: LoginDto): Promise<users> {
+  static async login(loginDto: Login.Request): Promise<users> {
     const { username, password } = loginDto;
     const user = await withPrismaError(() =>
       prisma.users.findUniqueOrThrow({
         where: { username: username },
-      })
+      }),
     );
     await this.verifyPassword(password, user.password);
     return user;
@@ -53,7 +53,7 @@ export class AuthService {
     return await withPrismaError(() =>
       prisma.users.findUniqueOrThrow({
         where: { id: id },
-      })
+      }),
     );
   }
 
@@ -62,15 +62,15 @@ export class AuthService {
   }
 
   static async updatePassword(
-    updatePasswordDto: UpdatePasswordDto,
-    id: string
+    updatePasswordDto: UpdatePassword.Request,
+    id: string,
   ) {
     const { originalPassword, newPassword } = updatePasswordDto;
     const hashedPassword = await withPrismaError(() =>
       prisma.users.findUniqueOrThrow({
         select: { password: true },
         where: { id: id },
-      })
+      }),
     );
     await this.verifyPassword(originalPassword, hashedPassword.password);
 
@@ -79,7 +79,7 @@ export class AuthService {
       prisma.users.update({
         where: { id: id },
         data: { password: hashedNewPassword },
-      })
+      }),
     );
 
     await redis.del(`refresh:${id}`);
@@ -87,7 +87,7 @@ export class AuthService {
 
   private static async verifyPassword(
     plain: string,
-    hashed: string
+    hashed: string,
   ): Promise<void> {
     const valid = await bcrypt.compare(plain, hashed);
     if (!valid) {
