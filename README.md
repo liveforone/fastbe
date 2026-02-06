@@ -7,6 +7,14 @@
 - This document was translated with the best effort to ensure natural wording using GPT, translation tools, and dictionaries.
 - Nevertheless, there may still be inaccuracies in the translation, and readers are advised to keep this in mind.
 
+## Introduction
+
+- This project adopts a functional-programming–inspired approach where system interfaces are defined first, before actual implementation.
+- The API specifications are written first, and the backend is built based on those specs.
+- You can find the exact specifications in the src/api directory.
+- The goal of this architecture is to write the API specs first in the api directory and then implement controllers on top of them, keeping the controllers thin.
+- By writing the API specs first, then the business logic, running tests to verify correct behavior, and only then implementing the controllers, this project naturally supports test-driven and spec-driven development.
+
 ## Setup
 
 - Rather than cloning and building the project directly, I decided to document a manual setup approach instead.
@@ -14,7 +22,7 @@
 ### Install Dependencies
 
 - `npm init -y`
-- `npm install fastify @fastify/jwt @fastify/cookie @fastify/cors bcrypt ioredis pg dotenv pino pino-pretty`
+- `npm install fastify @fastify/jwt @fastify/cookie @fastify/cors bcrypt zod ioredis pg dotenv pino pino-pretty`
 - `npm install prisma @prisma/client @prisma/adapter-pg prisma-common-error-handle`
 - `npm install -D typescript ts-node @types/node @types/bcrypt @types/pg vitest`
 
@@ -216,7 +224,7 @@ app.setReplySerializer((payload) => {
   }
 
   return JSON.stringify(payload, (_, value) =>
-    typeof value === "bigint" ? value.toString() : value
+    typeof value === "bigint" ? value.toString() : value,
   );
 });
 ```
@@ -255,6 +263,16 @@ app.register(cors, {
   credentials: true,
 });
 ```
+
+### Caution of zod version
+
+- This project uses **Zod version 3**.
+- If you do not match the Zod version, errors will occur, so please make sure to use **zod/v3**.
+
+### Make Good Use of the satisfies Operator
+
+- Make good use of the satisfies operator, which provides a flexible way to ensure type safety.
+- In particular, by defining things like cookie options and response types in the API specs and then checking them in the router with the satisfies operator, you can catch incorrect types at compile time.
 
 ### Prisma ORM
 
