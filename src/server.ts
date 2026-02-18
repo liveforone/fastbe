@@ -3,13 +3,13 @@ import Fastify from "fastify";
 import jwt from "@fastify/jwt";
 import cookie from "@fastify/cookie";
 import cors from "@fastify/cors";
-import { authRoutes } from "./routes/auth.route.js";
-import { postRoutes } from "./routes/post.route.js";
 import { ZodError } from "zod/v3";
+import { createDIContainer } from "./dependency-injection.js";
 
 const app = Fastify({
   logger: true,
 });
+
 app.setReplySerializer((payload) => {
   if (payload === undefined || payload === null) {
     return "";
@@ -19,6 +19,7 @@ app.setReplySerializer((payload) => {
     typeof value === "bigint" ? value.toString() : value,
   );
 });
+
 /**
  * This code is example of unusing cookie and jwt.
  * No user authentication service use this code.
@@ -40,10 +41,13 @@ app.register(cors, {
   },
   credentials: true,
 });
+
 app.register(cookie);
+
 app.register(jwt, { secret: process.env.SECRET! });
-app.register(authRoutes, { prefix: "/auth" });
-app.register(postRoutes, { prefix: "/posts" });
+
+createDIContainer(app);
+
 app.setErrorHandler((error: any, request, reply) => {
   if (error instanceof ZodError) {
     return reply.status(400).send({

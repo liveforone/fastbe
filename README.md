@@ -2,75 +2,42 @@
 
 > Fastify based fast backend boilerplate&template
 
-## For Readers
-
-- This document was translated with the best effort to ensure natural wording using GPT, translation tools, and dictionaries.
-- Nevertheless, there may still be inaccuracies in the translation, and readers are advised to keep this in mind.
-
 ## Introduction
 
 - This project adopts a functional-programming–inspired approach where system interfaces are defined first, before actual implementation.
 - The API specifications are written first, and the backend is built based on those specs.
-- You can find the exact specifications in the src/api directory.
+- You can find the exact specifications in the src/somedomain-dir/api directory.
 - The goal of this architecture is to write the API specs first in the api directory and then implement controllers on top of them, keeping the controllers thin.
 - By writing the API specs first, then the business logic, running tests to verify correct behavior, and only then implementing the controllers, this project naturally supports test-driven and spec-driven development.
+- Infrastructure-level error wrappers handle errors consistently across DB, authentication, and other layers.
+
+## Key Folders & Files
+
+- src/
+  - `dependency-injection.ts`: DI container, injects services/repositories/controllers into Fastify instance
+  - `server.ts`: Server bootstrap, global error handler, middleware (CORS, cookies, JWT) setup
+  - `database/`: DB schema, DB connection, BaseRepository, and related code
+  - `errors/`: Global errors, DB error enum/map, Kysely error handler
+  - `post/, users/`: Domain-specific API, controller, repository, service, DTO
+  - `config/`: Infrastructure settings (logger, Redis)
+  - `util/`: Utility functions like password hashing/validation
+  - `__test__`/: Vitest-based integration tests
 
 ## Setup
 
 - Rather than cloning and building the project directly, I decided to document a manual setup approach instead.
 
-### Install Dependencies
+### 1. Install Dependencies
 
 - `npm init -y`
 - `npm install fastify @fastify/jwt @fastify/cookie @fastify/cors bcrypt zod ioredis pg dotenv pino pino-pretty`
-- `npm install prisma @prisma/client @prisma/adapter-pg prisma-common-error-handle`
+- `npm install kysely`
 - `npm install -D typescript ts-node @types/node @types/bcrypt @types/pg vitest`
 
-### Prisma setup
+### 2. Creating TypeScript, Vitest, and Environment Configuration Files
 
-- `npx prisma init --datasource-provider postgresql --output ../generated/prisma`
-- `npx prisma generate`
-- `npx prisma migrate dev --name init`
-- `npx prisma migrate deploy --schema ./prisma`
-- `npx prisma db push`
-
-### prisma.config.ts
-
-- You have to import `dotenv/config`.
-- This module allows Prisma to properly locate and load environment files.
-
-```typescript
-import "dotenv/config";
-import { defineConfig } from "prisma/config";
-
-export default defineConfig({
-  schema: "prisma/schema.prisma",
-  migrations: {
-    path: "prisma/migrations",
-  },
-  datasource: {
-    url: process.env.DATABASE_URL,
-  },
-});
-```
-
-### Add .env file
-
-- In production, you have to change env values fit in ur real world system.
-
-```
-DATABASE_URL="postgresql://postgres:ur_password@localhost:5432/ur_db_name?schema=public"
-
-REDIS_HOST=127.0.0.1
-REDIS_PORT=6379
-REDIS_PASSWORD="ur_redis_password_this_is_optional"
-
-SECRET=ur_secret_value
-
-FRONTEND_ORIGIN=http://localhost:5173
-```
-
-### tsconfig.json
+- Create the configuration files by referring to the examples of `tsconfig.json` and `vitest.config.ts`.
+- Below is the `tsconfig.json`:
 
 ```json
 {
@@ -91,12 +58,10 @@ FRONTEND_ORIGIN=http://localhost:5173
 }
 ```
 
-### vitest.config.ts
+- Below is the vitest.config.ts.
+- Important: You must add setupFiles and exclude values.
 
-- This project uses vitest for test.
-- Must! add setupFiles and exclude values.
-
-```typescript
+```ts
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
@@ -111,62 +76,107 @@ export default defineConfig({
 });
 ```
 
-### Copy package.json
+- Create a .env file and configure environment variables such as DB, Redis, JWT, and CORS.
 
-- Add the necessary scripts, and be sure to set the package `type` to `module`.
-- This is required for Prisma to work properly.
+```env
+DATABASE_URL="postgresql://postgres:ur_password@localhost:5432/ur_db_name?schema=public"
+
+REDIS_HOST=127.0.0.1
+REDIS_PORT=6379
+REDIS_PASSWORD="ur_redis_password_this_is_optional"
+
+SECRET=ur_secret_value
+
+FRONTEND_ORIGIN=http://localhost:5173
+```
+
+- Add the necessary scripts, and make sure to set the type field in package.json to module.
 
 ```json
-{
-  "name": "input_ur_project_name",
-  "version": "1.0.0",
-  "description": "input_ur_project_description",
-  "scripts": {
-    "dev": "tsx watch src/server.ts | pino-pretty",
-    "build": "npx prisma generate && npx prisma migrate deploy --schema ./prisma && npx prisma db push && tsc",
-    "start": "node dist/src/server.js | pino-pretty",
-    "test": "npx prisma migrate reset --force && npx prisma generate && sleep 2 && npx vitest src/__test__/"
-  },
-  "type": "module",
-  "dependencies": {
-    "@fastify/cookie": "^11.0.2",
-    "@fastify/cors": "^11.2.0",
-    "@fastify/jwt": "^10.0.0",
-    "@prisma/adapter-pg": "^7.2.0",
-    "@prisma/client": "^7.2.0",
-    "bcrypt": "^6.0.0",
-    "dotenv": "^17.2.3",
-    "fastify": "^5.6.2",
-    "ioredis": "^5.8.2",
-    "pg": "^8.16.3",
-    "pino": "^10.1.0",
-    "pino-pretty": "^13.1.3",
-    "prisma": "^7.2.0",
-    "prisma-common-error-handle": "^2.2.2"
-  },
-  "devDependencies": {
-    "@types/bcrypt": "^6.0.0",
-    "@types/node": "^25.0.3",
-    "@types/pg": "^8.16.0",
-    "ts-node": "^10.9.2",
-    "tsx": "^4.21.0",
-    "typescript": "^5.9.3",
-    "vitest": "^4.0.16"
-  }
+"type": "module",
+```
+
+### 3. Create the src Directory and Copy the Code
+
+- Create the src/ directory and replicate the internal file structure exactly.
+- For each file, refer to the code in this repository and copy/write accordingly.
+
+#### 3-1. kysely setup
+
+- You must enable `strict` mode in your tsconfig.json file's compilerOptions.
+- Define db schema in /database/schema.ts.
+
+```typescript
+// /database/schema.ts
+import { Generated, Selectable } from "kysely";
+
+export interface Database {
+  users: UsersTable;
+  post: PostTable;
+}
+
+export interface UsersTable {
+  id: string;
+  username: string;
+  password: string;
+  role: "MEMBER" | "ADMIN";
+}
+export type Users = Selectable<UsersTable>;
+
+export interface PostTable {
+  id: Generated<bigint>;
+  title: string;
+  content: string;
+  post_state: "ORIGINAL" | "EDITED";
+  writer_id: string;
+  created_date: Generated<Date>;
+}
+export type Post = Selectable<PostTable>;
+```
+
+- The `selectable` type must be explicitly defined.
+- Only then can it be utilized as a return type.
+- Next, create the file /database/database.ts, which is responsible for establishing a connection to the database.
+
+```typescript
+import { Kysely, PostgresDialect } from "kysely";
+import { Pool } from "pg";
+import { Database } from "./schema.js";
+
+export function createDB(): Kysely<Database> {
+  const dialect = new PostgresDialect({
+    pool: new Pool({
+      database: "ur_db_name",
+      host: "localhost", // Database is running on local system.
+      user: "postgres",
+      port: 5432,
+      password: "1111", // Put your db password.
+      max: 10, //Enter the maximum number of connections you want.
+    }),
+  });
+
+  return new Kysely<Database>({ dialect });
 }
 ```
 
-### Copy and Paste
+### 4. Prepare DB and Redis
 
-- `src` dir
+- Install PostgreSQL and Redis locally or in your desired environment.
+- Refer to src/database/init.sql to create the database schema.
 
-## Command
+### 5. Development / Build / Test Commands
 
-- Build : `npm run build`
-- Start dev environment : `npm run dev`
-- Start in production : `npm run start`
-- Test : `npm run test`
-  - This command tests all test files in `src/__test__` directory.
+```bash
+npm run dev      # Start development server
+npm run build    # Build the project
+npm run start    # Run the server after build
+npm run test     # Run integration tests
+```
+
+### 6. Additional Notes
+
+- Ensure that major library versions such as Zod v3 and Fastify v5 match exactly.
+- Environment variables, DB connection details, Redis settings, etc., must be adjusted according to your actual environment.
 
 ## Design
 
@@ -174,6 +184,56 @@ export default defineConfig({
 
 - This project is designed to serve a lightweight and high-performance REST API using Fastify.
 - The architecture prioritizes developer flexibility and intentionally avoids excessive object-oriented design.
+
+### Architecture & Design Features
+
+- Spec-First Development: define DTOs, paths, response types per domain in api/ first
+- Thin Controllers: business logic resides in services/repositories
+- Test-First: integration tests using real DB/Redis provided
+- JWT Authentication & Authorization, Redis-based refresh token management
+- Pino Logging, Zod v3 DTO validation
+- BigInt Serialization, CORS/cookie handling for production-ready environments
+
+### Dependency Injection (DI)
+
+- In src/dependency-injection.ts, inject DB, repositories, services, and controllers into the Fastify instance.
+- Each domain (e.g., users, post) connects dependencies in the order: repository → service → controller.
+- DI improves testability, modularity, and maintainability.
+
+### Infrastructure-Level Error Wrapper
+
+- `src/errors/kysely.error.handler.ts` maps PostgreSQL errors to GlobalError.
+- DB error codes are managed via enums/maps (db-error.enum.ts, db-error.map.ts) and converted to consistent HTTP status and messages.
+- Errors across authentication, authorization, input validation, etc., are integrated into the global error handler.
+
+### DB
+
+- PostgreSQL is used as the database.
+- But you may choose and use any database that best fits your preferences or your production environment.
+
+### Kysely Query Builder & BaseRepository Layering
+
+- Unlike Prisma, Kysely does not throw errors for queries that return no rows or updates/deletes that affect 0 rows; it behaves like raw SQL.
+- To handle this, BaseRepository provides three layers of methods:
+  - executeOne: SELECT that must return exactly 1 row (404 if not found)
+  - executeQuery: SELECT that may return 0 or more rows (e.g., pagination, search)
+  - executeMutation: UPDATE/DELETE must affect ≥1 row (404 if 0)
+- Repositories like users.repository.ts and post.repository.ts use these methods to enforce clear responsibilities.
+
+### Query/Mutation Separation
+
+- Database operations are clearly separated into Queries (read) and Mutations (write):
+
+```psql
+  | Type     | Meaning | DB Operation             |
+  | -------- | ------- | ----------------------- |
+  | Query    | Read    | SELECT                  |
+  | Mutation | Write   | INSERT / UPDATE / DELETE|
+```
+
+- Queries are further split:
+  - Query-Required: must return ≥1 row (`executeOne`)
+  - Query-Optional: may return 0 rows (`executeQuery`)
 
 ### Authentication
 
@@ -185,19 +245,6 @@ export default defineConfig({
 - The client may optionally send an access token.
 - To enable authentication for a route, add `{ preHandler: authGuard }` to the routing configuration.
 - After authentication, the necessary user information can be extracted from the refresh token stored in cookies.
-
-### ORM
-
-- Prisma is used as the ORM.
-- It allows entities to be conveniently modeled and managed as objects,
-- and it is a next-generation ORM that has evolved significantly over time, becoming more robust and refined up to version 7.
-- The project includes examples of advanced Prisma usage, with cursor-based pagination being a representative example.
-- It also contains Prisma query patterns that are well suited for real-world production use.
-
-### DB
-
-- PostgreSQL is used as the database.
-- But you may choose and use any database that best fits your preferences or your production environment.
 
 ### Testing
 
@@ -274,49 +321,7 @@ app.register(cors, {
 - Make good use of the satisfies operator, which provides a flexible way to ensure type safety.
 - In particular, by defining things like cookie options and response types in the API specs and then checking them in the router with the satisfies operator, you can catch incorrect types at compile time.
 
-### Prisma ORM
-
-#### How to use composite keys
-
-```prisma
-model User {
-  firstName String
-  lastName  String
-  email     String  @unique
-  isAdmin   Boolean @default(false)
-
-  @@id([firstName, lastName])
-}
-```
-
-#### How to solve the n+1 problem
-
-- Use fluent api.
-- There must be a relationship set in the schema.
-- You need to use a single query API such as `findFirst` or `findUnique`.
-
-```typescript
-//Retrieve posts based on users (in a one-to-many relationship, lookup -> n+1 problem occurs)
-const posts: Post[] = await prisma.user
-  .findUniuqe({ where: { id: "1" } })
-  .post(); //post is the post name of the relationship defined in the users schema
-```
-
-#### Omit API
-
-- The omit API added from prisma 5.13.0 is an API that, unlike the existing include for dto projection, lists unnecessary fields and retrieves all other fields.
-- The special feature is that you can use the include API and omit field together.
-
-```typescript
-await prisma.user.findMany({
-  omit: {
-    password: true,
-  },
-});
-```
-
 ## References
 
 - [fastify/jwt reference](https://github.com/fastify/fastify-jwt)
-- [prisma-fastify example](https://github.com/prisma/prisma-examples/blob/latest/orm/fastify/src/index.ts)
 - [fastify routes generics for typescript users](https://fastify.dev/docs/latest/Reference/TypeScript/)

@@ -1,9 +1,9 @@
-export class CustomError extends Error {
+export class GlobalError extends Error {
   statusCode: number;
 
   constructor(message: string, statusCode = 400) {
     super(message);
     this.statusCode = statusCode;
-    Object.setPrototypeOf(this, CustomError.prototype);
+    Object.setPrototypeOf(this, GlobalError.prototype);
   }
 }

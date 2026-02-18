@@ -1,4 +1,4 @@
-import { PostSummaryDto } from "./postSummary.dto.js";
+import { PostSummaryDto } from "./post-summary.dto.js";
 
 export interface PostPageDto {
   readonly postSummaries: PostSummaryDto[];
