@@ -16,7 +16,7 @@ export namespace Login {
     httpOnly: true;
     secure: false; //https -> true
     sameSite: "lax"; //cross-site -> none + secure=true
-    path: "/auth";
+    path: "/users";
   }
   export interface Response {
     accessToken: string;

@@ -1,4 +1,4 @@
-import { PostPageDto } from "./dto/postPage.dto.js";
+import { PostPageDto } from "./dto/post-page.dto.js";
 
 export namespace PostBelongWriter {
   export const PATH = "/writers";

@@ -5,7 +5,7 @@ export namespace Logout {
 
   export const COOKIE_NAME = "refreshToken";
   export interface CookieOptions {
-    path: "/auth";
+    path: "/users";
   }
   export interface Response {
     ok: true;
