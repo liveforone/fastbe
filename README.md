@@ -54,7 +54,7 @@
     "skipLibCheck": true,
     "types": ["vitest/globals"]
   },
-  "include": ["src/**/*", "generated/prisma"]
+  "include": ["src/**/*"]
 }
 ```
 
