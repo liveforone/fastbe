@@ -26,7 +26,7 @@ app.setReplySerializer((payload) => {
  */
 // await app.register(cors, {
 //   origin: ["http://localhost:5173", "https://real.frontend.url"],
-//   methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
+//   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
 // });
 app.register(cors, {
   origin: (origin, cb) => {
