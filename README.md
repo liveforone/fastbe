@@ -136,6 +136,7 @@ export type Post = Selectable<PostTable>;
 
 - The `selectable` type must be explicitly defined.
 - Only then can it be utilized as a return type.
+- Usually, table names in the database are stored in snake_case. You should define them in Kysely exactly the same way, i.e., matching the database table names precisely.
 - Next, create the file /database/database.ts, which is responsible for establishing a connection to the database.
 
 ```typescript
@@ -320,6 +321,21 @@ app.register(cors, {
 
 - Make good use of the satisfies operator, which provides a flexible way to ensure type safety.
 - In particular, by defining things like cookie options and response types in the API specs and then checking them in the router with the satisfies operator, you can catch incorrect types at compile time.
+
+## Caution
+
+### Precautions When Defining API Specs
+
+- When writing an API spec, pay close attention to the controller's prefix URL.
+- Suppose the prefix URL is `/api/post` and you are creating an API spec.
+- If you want to write the spec in a RESTful way and plan to send a POST request to `/api/post`, the `path` field in the API spec code should be left empty.
+- If you fill it in with `/` instead, it will result in `/api/post/`, which can cause problems.
+
+### Precautions When Returning `bigint` Type
+
+- The current boilerplate’s serialization setup automatically converts `bigint` values to strings when returning them to the client.
+- Therefore, when writing client-side code, you should keep this in mind and define response objects, such as DTOs, using `string` for those fields.
+- Forgetting this often leads to type errors.
 
 ## References
 
