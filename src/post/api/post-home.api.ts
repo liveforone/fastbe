@@ -1,7 +1,7 @@
 import { PostPageDto } from "./dto/post-page.dto.js";
 
 export namespace PostHome {
-  export const PATH = "/";
+  export const PATH = "";
   export const METHOD = "GET" as const;
   export const STATUS = 200 as const;
 
