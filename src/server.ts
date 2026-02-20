@@ -4,7 +4,7 @@ import jwt from "@fastify/jwt";
 import cookie from "@fastify/cookie";
 import cors from "@fastify/cors";
 import { ZodError } from "zod/v3";
-import { createDIContainer } from "./dependency-injection.js";
+import { createDIContainer } from "./di.container.js";
 
 const app = Fastify({
   logger: true,
@@ -40,6 +40,7 @@ app.register(cors, {
     }
   },
   credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
 });
 
 app.register(cookie);
