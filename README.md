@@ -197,9 +197,42 @@ npm run test     # Run integration tests
 
 ### Dependency Injection (DI)
 
-- In src/dependency-injection.ts, inject DB, repositories, services, and controllers into the Fastify instance.
+- In src/di.container.ts, inject DB, repositories, services, and controllers into the Fastify instance.
 - Each domain (e.g., users, post) connects dependencies in the order: repository → service → controller.
 - DI improves testability, modularity, and maintainability.
+
+#### Important Note:
+
+- Every object that is instantiated using constructor injection must also be registered in the DI container.
+- This ensures that dependencies are properly managed and can be injected wherever needed.
+- For example:
+
+```ts
+///example.service.ts
+export class ExampleService {
+  constructor(
+    private readonly db: Kysely<Database>, //define db for transaction use.
+    private readonly firstRepository: FirstRepository,
+    private readonly secondRepository: SecondRepository,
+  ) {}
+}
+
+//di.container.ts
+const db = createDB();
+
+const firstRepository = new FirstRepository(db);
+const someService = new SomeService(firstRepository);
+
+const secondRepository = new SecondRepository(db);
+const exampleService = new ExampleService(
+  db,
+  firstRepository,
+  secondRepository,
+);
+app.register(createExampleController(exampleService), {
+  prefix: "/api/example",
+});
+```
 
 ### Infrastructure-Level Error Wrapper
 
