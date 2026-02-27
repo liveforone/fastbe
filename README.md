@@ -23,7 +23,16 @@
   - `util/`: Utility functions like password hashing/validation
   - `__test__`/: Vitest-based integration tests
 
-## Setup
+## Setup with script
+
+> This script works properly on macOS and Linux.
+
+- After downloading the `setup.sh` script, create a folder where you want to use the boilerplate. Place the `setup.sh` script inside that folder and run the command below.
+- `chmod +x setup.sh`
+- `./setup.sh`
+- Finally, modify the `.env` file to match your project settings.
+
+## Manual Setup
 
 - Rather than cloning and building the project directly, I decided to document a manual setup approach instead.
 
@@ -165,7 +174,12 @@ export function createDB(): Kysely<Database> {
 - Install PostgreSQL and Redis locally or in your desired environment.
 - Refer to src/database/init.sql to create the database schema.
 
-### 5. Development / Build / Test Commands
+### 5. Additional Notes
+
+- Ensure that major library versions such as Zod v3 and Fastify v5 match exactly.
+- Environment variables, DB connection details, Redis settings, etc., must be adjusted according to your actual environment.
+
+## Development / Build / Test Commands
 
 ```bash
 npm run dev      # Start development server
@@ -173,11 +187,6 @@ npm run build    # Build the project
 npm run start    # Run the server after build
 npm run test     # Run integration tests
 ```
-
-### 6. Additional Notes
-
-- Ensure that major library versions such as Zod v3 and Fastify v5 match exactly.
-- Environment variables, DB connection details, Redis settings, etc., must be adjusted according to your actual environment.
 
 ## Design
 
