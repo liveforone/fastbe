@@ -1081,16 +1081,19 @@ import { UsersRepository } from "../users/repository/users.repository.js";
 
 describe("AuthService Unit Test(Real DB / Redis)", () => {
   const db = createDB();
-  const usersRepository = new UsersRepository(db);
-  const usersService = new UsersService(usersRepository);
+  let trx: any;
+  let usersService: UsersService;
 
   beforeEach(async () => {
-    await db.deleteFrom("users").execute();
+    trx = await db.startTransaction().execute();
+
+    const usersRepository = new UsersRepository(trx);
+    usersService = new UsersService(usersRepository);
     await redis.flushall();
   });
 
   afterAll(async () => {
-    await db.deleteFrom("users").execute();
+    await trx.rollback();
     await redis.flushall();
     await redis.quit();
   });
@@ -1188,6 +1191,7 @@ describe("AuthService Unit Test(Real DB / Redis)", () => {
     ).rejects.toThrow("Wrong Password");
   });
 });
+
 EOF
 
 ########################################
@@ -1688,20 +1692,23 @@ import { UpdatePost } from "../post/api/update-post.api.js";
 
 describe("PostService Unit Test(Real DB / Redis)", () => {
   const db = createDB();
-  const usersRepository = new UsersRepository(db);
-  const usersService = new UsersService(usersRepository);
-  const postRepository = new PostRepository(db);
-  const postService = new PostService(postRepository);
+  let trx: any;
+  let usersService: UsersService;
+  let postService: PostService;
 
   beforeEach(async () => {
-    await db.deleteFrom("users").execute();
-    await db.deleteFrom("post").execute();
+    trx = await db.startTransaction().execute();
+
+    const usersRepository = new UsersRepository(trx);
+    usersService = new UsersService(usersRepository);
+
+    const postRepository = new PostRepository(trx);
+    postService = new PostService(postRepository);
     await redis.flushall();
   });
 
   afterAll(async () => {
-    await db.deleteFrom("users").execute();
-    await db.deleteFrom("post").execute();
+    await trx.rollback();
     await redis.flushall();
     await redis.quit();
   });
@@ -1775,6 +1782,7 @@ describe("PostService Unit Test(Real DB / Redis)", () => {
     );
   });
 });
+
 EOF
 
 echo "✅ DONE."
