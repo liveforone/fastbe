@@ -9,16 +9,19 @@ import { UsersRepository } from "../users/repository/users.repository.js";
 
 describe("AuthService Unit Test(Real DB / Redis)", () => {
   const db = createDB();
-  const usersRepository = new UsersRepository(db);
-  const usersService = new UsersService(usersRepository);
+  let trx: any;
+  let usersService: UsersService;
 
   beforeEach(async () => {
-    await db.deleteFrom("users").execute();
+    trx = await db.startTransaction().execute();
+
+    const usersRepository = new UsersRepository(trx);
+    usersService = new UsersService(usersRepository);
     await redis.flushall();
   });
 
   afterAll(async () => {
-    await db.deleteFrom("users").execute();
+    await trx.rollback();
     await redis.flushall();
     await redis.quit();
   });
