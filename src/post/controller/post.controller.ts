@@ -25,7 +25,7 @@ export function createPostController(postService: PostService) {
         const { id } = req.user as AuthUser;
         await postService.createPost(parsedBody, id);
 
-        reply.send({ ok: true });
+        reply.status(201).send({ ok: true });
       },
     );
 

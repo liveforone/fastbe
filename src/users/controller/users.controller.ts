@@ -17,7 +17,7 @@ export function createUsersController(usersService: UsersService) {
     app.post<{ Body: Signup.Request }>(Signup.PATH, async (req, reply) => {
       const parsedBody = Signup.RequestSchema.parse(req.body);
       await usersService.signup(parsedBody);
-      reply.send({ ok: true });
+      reply.status(201).send({ ok: true });
     });
 
     app.post<{ Body: Login.Request }>(Login.PATH, async (req, reply) => {
