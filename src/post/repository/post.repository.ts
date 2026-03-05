@@ -67,7 +67,7 @@ export class PostRepository extends BaseRepository {
         .selectFrom("post")
         .select(["id", "title", "writer_id", "created_date"])
         .orderBy("id", "desc")
-        .limit(this.PAGE_LIMIT_SIZE);
+        .limit(this.PAGE_LIMIT_SIZE + 1);
 
       if (lastId !== undefined) {
         query = query.where("id", "<", lastId);
@@ -84,7 +84,7 @@ export class PostRepository extends BaseRepository {
         .where("writer_id", "=", userId)
         .select(["id", "title", "writer_id", "created_date"])
         .orderBy("id", "desc")
-        .limit(this.PAGE_LIMIT_SIZE);
+        .limit(this.PAGE_LIMIT_SIZE + 1);
 
       if (lastId !== undefined) {
         query = query.where("id", "<", lastId);
@@ -101,7 +101,7 @@ export class PostRepository extends BaseRepository {
         .where("title", "like", `${keyword}%`)
         .select(["id", "title", "writer_id", "created_date"])
         .orderBy("id", "desc")
-        .limit(this.PAGE_LIMIT_SIZE);
+        .limit(this.PAGE_LIMIT_SIZE + 1);
 
       if (lastId !== undefined) {
         query = query.where("id", "<", lastId);

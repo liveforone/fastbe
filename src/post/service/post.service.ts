@@ -42,12 +42,14 @@ export class PostService {
    */
   async getAllPostPages(lastId?: bigint): Promise<PostHome.Response> {
     const posts = await this.postRepository.findAllPostPages(lastId);
-    const newLastId =
-      posts.length > 0 ? posts[posts.length - 1].id : (lastId ?? 0n);
+    const hasNext = posts.length === 11;
+
+    const items = hasNext ? posts.slice(0, 10) : posts;
+    const nextCursor = hasNext ? items[items.length - 1].id : null;
     return {
       postSummaries: posts,
       metadata: {
-        lastId: newLastId,
+        lastId: nextCursor,
       },
     };
   }
@@ -60,12 +62,14 @@ export class PostService {
       userId,
       lastId,
     );
-    const newLastId =
-      posts.length > 0 ? posts[posts.length - 1].id : (lastId ?? 0n);
+    const hasNext = posts.length === 11;
+
+    const items = hasNext ? posts.slice(0, 10) : posts;
+    const nextCursor = hasNext ? items[items.length - 1].id : null;
     return {
       postSummaries: posts,
       metadata: {
-        lastId: newLastId,
+        lastId: nextCursor,
       },
     };
   }
@@ -79,12 +83,14 @@ export class PostService {
       lastId,
     );
 
-    const newLastId =
-      posts.length > 0 ? posts[posts.length - 1].id : (lastId ?? 0n);
+    const hasNext = posts.length === 11;
+
+    const items = hasNext ? posts.slice(0, 10) : posts;
+    const nextCursor = hasNext ? items[items.length - 1].id : null;
     return {
       postSummaries: posts,
       metadata: {
-        lastId: newLastId,
+        lastId: nextCursor,
       },
     };
   }
