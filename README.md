@@ -31,6 +31,7 @@
 - `chmod +x setup.sh`
 - `./setup.sh`
 - Finally, modify the `.env` file to match your project settings.
+  - Query logging may degrade performance in production. Therefore, keep only the dialect configuration in database.ts and comment out the log configuration.
 
 ## Manual Setup
 
@@ -97,6 +98,8 @@ REDIS_PASSWORD="ur_redis_password_this_is_optional"
 SECRET=ur_secret_value
 
 FRONTEND_ORIGIN=http://localhost:5173
+//IF you use react preview : npm run preview
+//FRONTEND_ORIGIN=http://localhost:4173/
 ```
 
 - Add the necessary scripts, and make sure to set the type field in package.json to module.
@@ -152,20 +155,37 @@ export type Post = Selectable<PostTable>;
 import { Kysely, PostgresDialect } from "kysely";
 import { Pool } from "pg";
 import { Database } from "./schema.js";
+import { logger } from "../config/logger.js";
 
 export function createDB(): Kysely<Database> {
-  const dialect = new PostgresDialect({
-    pool: new Pool({
-      database: "ur_db_name",
-      host: "localhost", // Database is running on local system.
-      user: "postgres",
-      port: 5432,
-      password: "1111", // Put your db password.
-      max: 10, //Enter the maximum number of connections you want.
+  const db = new Kysely<Database>({
+    dialect: new PostgresDialect({
+      pool: new Pool({
+        connectionString: process.env.DATABASE_URL,
+        max: 10,
+      }),
     }),
+
+    //Query logging may degrade performance in production. Therefore, keep only the dialect configuration in database.ts and comment out the log configuration.
+    log(event) {
+      if (event.level === "query") {
+        logger.info(
+          {
+            sql: event.query.sql,
+            params: event.query.parameters,
+            duration: event.queryDurationMillis,
+          },
+          "kysely query",
+        );
+      }
+
+      if (event.level === "error") {
+        logger.error(event.error);
+      }
+    },
   });
 
-  return new Kysely<Database>({ dialect });
+  return db;
 }
 ```
 
