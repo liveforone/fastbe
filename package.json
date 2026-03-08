@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "tsx watch src/server.ts | pino-pretty",
     "build": "tsc",
-    "start": "node dist/src/server.js | pino-pretty",
+    "start": "tsc && node dist/src/server.js | pino-pretty",
     "test": "npx vitest src/__test__/"
   },
   "keywords": [],
