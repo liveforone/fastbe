@@ -29,7 +29,7 @@ if (pkg.main) {
 pkg.scripts = {
   "dev": "tsx watch src/server.ts | pino-pretty",
   "build": "tsc",
-  "start": "node dist/src/server.js | pino-pretty",
+  "start": "tsc && node dist/src/server.js | pino-pretty",
   "test": "npx vitest src/__test__/"
 };
 
@@ -213,16 +213,36 @@ cat <<'EOF' > src/database/database.ts
 import { Kysely, PostgresDialect } from "kysely";
 import { Pool } from "pg";
 import { Database } from "./schema.js";
+import { logger } from "../config/logger.js";
 
 export function createDB(): Kysely<Database> {
-  const dialect = new PostgresDialect({
-    pool: new Pool({
-      connectionString: process.env.DATABASE_URL,
-      max: 10,
+  const db = new Kysely<Database>({
+    dialect: new PostgresDialect({
+      pool: new Pool({
+        connectionString: process.env.DATABASE_URL,
+        max: 10,
+      }),
     }),
+
+    log(event) {
+      if (event.level === "query") {
+        logger.info(
+          {
+            sql: event.query.sql,
+            params: event.query.parameters,
+            duration: event.queryDurationMillis,
+          },
+          "kysely query",
+        );
+      }
+
+      if (event.level === "error") {
+        logger.error(event.error);
+      }
+    },
   });
 
-  return new Kysely<Database>({ dialect });
+  return db;
 }
 EOF
 
