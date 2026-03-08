@@ -1,18 +1,34 @@
 import { Kysely, PostgresDialect } from "kysely";
 import { Pool } from "pg";
 import { Database } from "./schema.js";
+import { logger } from "../config/logger.js";
 
 export function createDB(): Kysely<Database> {
-  const dialect = new PostgresDialect({
-    pool: new Pool({
-      database: "fastbe",
-      host: "localhost",
-      user: "postgres",
-      port: 5432,
-      password: "159624",
-      max: 10,
+  const db = new Kysely<Database>({
+    dialect: new PostgresDialect({
+      pool: new Pool({
+        connectionString: process.env.DATABASE_URL,
+        max: 10,
+      }),
     }),
+
+    log(event) {
+      if (event.level === "query") {
+        logger.info(
+          {
+            sql: event.query.sql,
+            params: event.query.parameters,
+            duration: event.queryDurationMillis,
+          },
+          "kysely query",
+        );
+      }
+
+      if (event.level === "error") {
+        logger.error(event.error);
+      }
+    },
   });
 
-  return new Kysely<Database>({ dialect });
+  return db;
 }
