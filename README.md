@@ -42,7 +42,7 @@
 - `npm init -y`
 - `npm install fastify @fastify/jwt @fastify/cookie @fastify/cors bcrypt zod ioredis pg dotenv pino pino-pretty`
 - `npm install kysely`
-- `npm install -D typescript ts-node @types/node @types/bcrypt @types/pg vitest`
+- `npm install -D typescript ts-node @types/node @types/bcrypt @types/pg vitest @vitest/coverage-v8`
 
 ### 2. Creating TypeScript, Vitest, and Environment Configuration Files
 
@@ -82,6 +82,11 @@ export default defineConfig({
     setupFiles: ["dotenv/config"],
     include: ["src/**/*.test.ts"],
     exclude: ["dist", "node_modules"],
+    coverage: {
+      provider: "v8",
+      include: ["src/**/service/**/*.ts"],
+      exclude: ["src/__test__/**", "**/*.d.ts", "node_modules", "dist"],
+    },
   },
 });
 ```
@@ -206,6 +211,8 @@ npm run dev      # Start development server
 npm run build    # Build the project
 npm run start    # Run the server after build
 npm run test     # Run integration tests
+npm run test:coverage # Run test coverage
+open coverage/index.html # You can see service logic's test coverage
 ```
 
 ## Design
