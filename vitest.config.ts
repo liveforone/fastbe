@@ -8,5 +8,10 @@ export default defineConfig({
     setupFiles: ["dotenv/config"],
     include: ["src/**/*.test.ts"],
     exclude: ["dist", "node_modules"],
+    coverage: {
+      provider: "v8",
+      include: ["src/**/service/**/*.ts"],
+      exclude: ["src/__test__/**", "**/*.d.ts", "node_modules", "dist"],
+    },
   },
 });
