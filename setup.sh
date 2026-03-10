@@ -30,7 +30,8 @@ pkg.scripts = {
   "dev": "tsx watch src/server.ts | pino-pretty",
   "build": "tsc",
   "start": "tsc && node dist/src/server.js | pino-pretty",
-  "test": "npx vitest src/__test__/"
+  "test": "npx vitest src/__test__/",
+  "test:coverage": "npx vitest run --coverage"
 };
 
 fs.writeFileSync("package.json", JSON.stringify(pkg, null, 2));
@@ -74,6 +75,11 @@ export default defineConfig({
     setupFiles: ["dotenv/config"],
     include: ["src/**/*.test.ts"],
     exclude: ["dist", "node_modules"],
+    coverage: {
+      provider: "v8",
+      include: ["src/**/service/**/*.ts"],
+      exclude: ["src/__test__/**", "**/*.d.ts", "node_modules", "dist"],
+    },
   },
 });
 EOF
@@ -83,13 +89,24 @@ EOF
 ########################################
 
 cat <<EOF > .gitignore
+# node_modules
 node_modules
+
+# env
 .env
 .env.dev
 .env.production
-/generated/prisma
+
+# build file
 /dist
+
+# coverage file
+/coverage
+
+# os file
 .DS_Store
+
+# docs
 TODO.md
 EOF
 
