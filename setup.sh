@@ -641,11 +641,14 @@ createDIContainer(app);
 app.setErrorHandler((error: any, request, reply) => {
   if (error instanceof ZodError) {
     return reply.status(400).send({
+      ok: false,
       error: "INVALID_DTO",
       issues: error.issues,
     });
   }
-  reply.status(error.statusCode || 500).send({ error: error.message });
+  reply
+    .status(error.statusCode || 500)
+    .send({ ok: false, error: error.message });
 });
 
 async function bootstrap() {
@@ -825,6 +828,7 @@ export namespace Login {
     path: "/users";
   }
   export interface Response {
+    ok: boolean;
     accessToken: string;
   }
 }
@@ -860,6 +864,7 @@ export namespace Refresh {
     path: "/users";
   }
   export interface Response {
+    ok: boolean;
     accessToken: string;
   }
 }
@@ -930,7 +935,7 @@ export function createUsersController(usersService: UsersService) {
     app.post<{ Body: Signup.Request }>(Signup.PATH, async (req, reply) => {
       const parsedBody = Signup.RequestSchema.parse(req.body);
       await usersService.signup(parsedBody);
-      reply.send({ ok: true });
+      reply.status(201).send({ ok: true } satisfies Signup.Response);
     });
 
     app.post<{ Body: Login.Request }>(Login.PATH, async (req, reply) => {
@@ -951,20 +956,24 @@ export function createUsersController(usersService: UsersService) {
           sameSite: "lax", //cross-site -> none + secure=true
           path: "/users",
         } satisfies Login.CookieOptions)
-        .send({ accessToken });
+        .send({ ok: true, accessToken: accessToken } satisfies Login.Response);
     });
 
     app.post(Refresh.PATH, async (req, reply) => {
       const { refreshToken } = req.cookies;
       if (!refreshToken) {
-        return reply.status(401).send({ error: "Refresh Token Not Found" });
+        return reply
+          .status(401)
+          .send({ ok: false, error: "Refresh Token Not Found" });
       }
 
       let payload: RefreshTokenPayload;
       try {
         payload = app.jwt.verify<any>(refreshToken);
       } catch {
-        return reply.status(401).send({ error: "Invalid refresh token" });
+        return reply
+          .status(401)
+          .send({ ok: false, error: "Invalid refresh token" });
       }
       await usersService.validRefreshToken(payload.id, refreshToken);
 
@@ -985,27 +994,32 @@ export function createUsersController(usersService: UsersService) {
           secure: false,
           path: "/users",
         } satisfies Refresh.CookieOptions)
-        .send({ accessToken: newAccessToken });
+        .send({
+          ok: true,
+          accessToken: newAccessToken,
+        } satisfies Refresh.Response);
     });
 
     app.post(Logout.PATH, async (req, reply) => {
       const { refreshToken } = req.cookies;
       if (!refreshToken) {
-        return reply.status(401).send({ error: "No RefreshToken" });
+        return reply.status(401).send({ ok: false, error: "No RefreshToken" });
       }
 
       try {
         const payload = app.jwt.verify<any>(refreshToken);
         await usersService.removeRefreshToken(payload.id);
       } catch {
-        return reply.status(401).send({ error: "Invalid refresh token" });
+        return reply
+          .status(401)
+          .send({ ok: false, error: "Invalid refresh token" });
       }
 
       reply.clearCookie(Logout.COOKIE_NAME, {
         path: "/users",
       } satisfies Logout.CookieOptions);
 
-      reply.send({ ok: true });
+      reply.send({ ok: true } satisfies Logout.Response);
     });
 
     app.patch<{ Body: UpdatePassword.Request }>(
@@ -1015,7 +1029,7 @@ export function createUsersController(usersService: UsersService) {
         const { id } = req.user as AuthUser;
         await usersService.updatePassword(req.body, id);
 
-        reply.send({ ok: true });
+        reply.send({ ok: true } satisfies UpdatePassword.Response);
       },
     );
   };
@@ -1322,6 +1336,16 @@ EOF
 ########################################
 # 21. post api spec 
 ########################################
+cat <<'EOF' > src/post/api/dto/post-detail.dto.ts 
+export interface PostDetailDto {
+  readonly id: bigint;
+  readonly title: string;
+  readonly content: string;
+  readonly post_state: "ORIGINAL" | "EDITED";
+  readonly writer_id: string;
+  readonly created_date: Date;
+}
+EOF
 
 cat <<'EOF' > src/post/api/dto/post-page.dto.ts
 import { PostSummaryDto } from "./post-summary.dto.js";
@@ -1376,18 +1400,16 @@ export namespace PostBelongWriter {
 EOF
 
 cat <<'EOF' > src/post/api/post-detail.api.ts
+import { PostDetailDto } from "./dto/post-detail.dto.js";
+
 export namespace PostDetail {
   export const PATH = "/:id";
   export const METHOD = "GET" as const;
   export const STATUS = 200 as const;
 
   export interface Response {
-    readonly id: bigint;
-    readonly title: string;
-    readonly content: string;
-    readonly post_state: "ORIGINAL" | "EDITED";
-    readonly writer_id: string;
-    readonly created_date: Date;
+    readonly ok: boolean;
+    readonly postDetailDto: PostDetailDto;
   }
 }
 EOF
@@ -1495,7 +1517,7 @@ export function createPostController(postService: PostService) {
         const { id } = req.user as AuthUser;
         await postService.createPost(parsedBody, id);
 
-        reply.send({ ok: true });
+        reply.status(201).send({ ok: true } satisfies CreatePost.Response);
       },
     );
 
@@ -1509,7 +1531,7 @@ export function createPostController(postService: PostService) {
 
         await postService.updatePost(parsedBody, id, userId);
 
-        reply.send({ ok: true });
+        reply.send({ ok: true } satisfies UpdatePost.Response);
       },
     );
 
@@ -1522,7 +1544,7 @@ export function createPostController(postService: PostService) {
 
         await postService.removePost(id, userId);
 
-        reply.send({ ok: true });
+        reply.send({ ok: true } satisfies RemovePost.Response);
       },
     );
 
@@ -1531,7 +1553,10 @@ export function createPostController(postService: PostService) {
       const { id } = req.params;
       const post = await postService.getPostById(id);
 
-      reply.send(post);
+      reply.send({
+        ok: true,
+        postDetailDto: post,
+      } satisfies PostDetail.Response);
     });
 
     // app.get<{ Querystrig: { "last-id"?: bigint } }> is Same.
@@ -1707,8 +1732,8 @@ EOF
 
 cat <<'EOF' > src/post/service/post.service.ts
 import { CreatePost } from "../api/create-post.api.js";
+import { PostDetailDto } from "../api/dto/post-detail.dto.js";
 import { PostBelongWriter } from "../api/post-belong-writer.api.js";
-import { PostDetail } from "../api/post-detail.api.js";
 import { PostHome } from "../api/post-home.api.js";
 import { PostSearch } from "../api/post-search.api.js";
 import { UpdatePost } from "../api/update-post.api.js";
@@ -1740,7 +1765,7 @@ export class PostService {
     await this.postRepository.deletePostByIdAndWriterId(id, userId);
   }
 
-  async getPostById(id: bigint): Promise<PostDetail.Response> {
+  async getPostById(id: bigint): Promise<PostDetailDto> {
     return await this.postRepository.findPostById(id);
   }
 
@@ -1750,12 +1775,14 @@ export class PostService {
    */
   async getAllPostPages(lastId?: bigint): Promise<PostHome.Response> {
     const posts = await this.postRepository.findAllPostPages(lastId);
-    const newLastId =
-      posts.length > 0 ? posts[posts.length - 1].id : (lastId ?? 0n);
+    const hasNext = posts.length === 11;
+
+    const items = hasNext ? posts.slice(0, 10) : posts;
+    const nextCursor = hasNext ? items[items.length - 1].id : null;
     return {
       postSummaries: posts,
       metadata: {
-        lastId: newLastId,
+        lastId: nextCursor,
       },
     };
   }
@@ -1768,12 +1795,14 @@ export class PostService {
       userId,
       lastId,
     );
-    const newLastId =
-      posts.length > 0 ? posts[posts.length - 1].id : (lastId ?? 0n);
+    const hasNext = posts.length === 11;
+
+    const items = hasNext ? posts.slice(0, 10) : posts;
+    const nextCursor = hasNext ? items[items.length - 1].id : null;
     return {
       postSummaries: posts,
       metadata: {
-        lastId: newLastId,
+        lastId: nextCursor,
       },
     };
   }
@@ -1787,12 +1816,14 @@ export class PostService {
       lastId,
     );
 
-    const newLastId =
-      posts.length > 0 ? posts[posts.length - 1].id : (lastId ?? 0n);
+    const hasNext = posts.length === 11;
+
+    const items = hasNext ? posts.slice(0, 10) : posts;
+    const nextCursor = hasNext ? items[items.length - 1].id : null;
     return {
       postSummaries: posts,
       metadata: {
-        lastId: newLastId,
+        lastId: nextCursor,
       },
     };
   }

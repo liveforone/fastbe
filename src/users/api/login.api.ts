@@ -19,6 +19,7 @@ export namespace Login {
     path: "/users";
   }
   export interface Response {
+    ok: boolean;
     accessToken: string;
   }
 }

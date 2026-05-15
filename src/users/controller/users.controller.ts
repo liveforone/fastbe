@@ -17,7 +17,7 @@ export function createUsersController(usersService: UsersService) {
     app.post<{ Body: Signup.Request }>(Signup.PATH, async (req, reply) => {
       const parsedBody = Signup.RequestSchema.parse(req.body);
       await usersService.signup(parsedBody);
-      reply.status(201).send({ ok: true });
+      reply.status(201).send({ ok: true } satisfies Signup.Response);
     });
 
     app.post<{ Body: Login.Request }>(Login.PATH, async (req, reply) => {
@@ -38,20 +38,24 @@ export function createUsersController(usersService: UsersService) {
           sameSite: "lax", //cross-site -> none + secure=true
           path: "/users",
         } satisfies Login.CookieOptions)
-        .send({ accessToken });
+        .send({ ok: true, accessToken: accessToken } satisfies Login.Response);
     });
 
     app.post(Refresh.PATH, async (req, reply) => {
       const { refreshToken } = req.cookies;
       if (!refreshToken) {
-        return reply.status(401).send({ error: "Refresh Token Not Found" });
+        return reply
+          .status(401)
+          .send({ ok: false, error: "Refresh Token Not Found" });
       }
 
       let payload: RefreshTokenPayload;
       try {
         payload = app.jwt.verify<any>(refreshToken);
       } catch {
-        return reply.status(401).send({ error: "Invalid refresh token" });
+        return reply
+          .status(401)
+          .send({ ok: false, error: "Invalid refresh token" });
       }
       await usersService.validRefreshToken(payload.id, refreshToken);
 
@@ -72,27 +76,32 @@ export function createUsersController(usersService: UsersService) {
           secure: false,
           path: "/users",
         } satisfies Refresh.CookieOptions)
-        .send({ accessToken: newAccessToken });
+        .send({
+          ok: true,
+          accessToken: newAccessToken,
+        } satisfies Refresh.Response);
     });
 
     app.post(Logout.PATH, async (req, reply) => {
       const { refreshToken } = req.cookies;
       if (!refreshToken) {
-        return reply.status(401).send({ error: "No RefreshToken" });
+        return reply.status(401).send({ ok: false, error: "No RefreshToken" });
       }
 
       try {
         const payload = app.jwt.verify<any>(refreshToken);
         await usersService.removeRefreshToken(payload.id);
       } catch {
-        return reply.status(401).send({ error: "Invalid refresh token" });
+        return reply
+          .status(401)
+          .send({ ok: false, error: "Invalid refresh token" });
       }
 
       reply.clearCookie(Logout.COOKIE_NAME, {
         path: "/users",
       } satisfies Logout.CookieOptions);
 
-      reply.send({ ok: true });
+      reply.send({ ok: true } satisfies Logout.Response);
     });
 
     app.patch<{ Body: UpdatePassword.Request }>(
@@ -102,7 +111,7 @@ export function createUsersController(usersService: UsersService) {
         const { id } = req.user as AuthUser;
         await usersService.updatePassword(req.body, id);
 
-        reply.send({ ok: true });
+        reply.send({ ok: true } satisfies UpdatePassword.Response);
       },
     );
   };

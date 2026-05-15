@@ -1,6 +1,6 @@
 import { CreatePost } from "../api/create-post.api.js";
+import { PostDetailDto } from "../api/dto/post-detail.dto.js";
 import { PostBelongWriter } from "../api/post-belong-writer.api.js";
-import { PostDetail } from "../api/post-detail.api.js";
 import { PostHome } from "../api/post-home.api.js";
 import { PostSearch } from "../api/post-search.api.js";
 import { UpdatePost } from "../api/update-post.api.js";
@@ -32,7 +32,7 @@ export class PostService {
     await this.postRepository.deletePostByIdAndWriterId(id, userId);
   }
 
-  async getPostById(id: bigint): Promise<PostDetail.Response> {
+  async getPostById(id: bigint): Promise<PostDetailDto> {
     return await this.postRepository.findPostById(id);
   }
 

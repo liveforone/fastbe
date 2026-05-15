@@ -25,7 +25,7 @@ export function createPostController(postService: PostService) {
         const { id } = req.user as AuthUser;
         await postService.createPost(parsedBody, id);
 
-        reply.status(201).send({ ok: true });
+        reply.status(201).send({ ok: true } satisfies CreatePost.Response);
       },
     );
 
@@ -39,7 +39,7 @@ export function createPostController(postService: PostService) {
 
         await postService.updatePost(parsedBody, id, userId);
 
-        reply.send({ ok: true });
+        reply.send({ ok: true } satisfies UpdatePost.Response);
       },
     );
 
@@ -52,7 +52,7 @@ export function createPostController(postService: PostService) {
 
         await postService.removePost(id, userId);
 
-        reply.send({ ok: true });
+        reply.send({ ok: true } satisfies RemovePost.Response);
       },
     );
 
@@ -61,7 +61,10 @@ export function createPostController(postService: PostService) {
       const { id } = req.params;
       const post = await postService.getPostById(id);
 
-      reply.send(post);
+      reply.send({
+        ok: true,
+        postDetailDto: post,
+      } satisfies PostDetail.Response);
     });
 
     // app.get<{ Querystrig: { "last-id"?: bigint } }> is Same.

@@ -11,6 +11,7 @@ export namespace Refresh {
     path: "/users";
   }
   export interface Response {
+    ok: boolean;
     accessToken: string;
   }
 }

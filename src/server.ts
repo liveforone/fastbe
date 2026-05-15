@@ -140,11 +140,14 @@ createDIContainer(app);
 app.setErrorHandler((error: any, request, reply) => {
   if (error instanceof ZodError) {
     return reply.status(400).send({
+      ok: false,
       error: "INVALID_DTO",
       issues: error.issues,
     });
   }
-  reply.status(error.statusCode || 500).send({ error: error.message });
+  reply
+    .status(error.statusCode || 500)
+    .send({ ok: false, error: error.message });
 });
 
 async function bootstrap() {
