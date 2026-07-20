@@ -10,6 +10,7 @@ import { hashPassword, verifyPassword } from "../../util/password.util.js";
 
 export class UsersService {
   constructor(private readonly usersRepository: UsersRepository) {}
+  private refreshKey = (id: string) => `refresh:${id}`;
 
   async signup(signupRequest: Signup.Request): Promise<Users> {
     const { username, password } = signupRequest;
@@ -29,14 +30,14 @@ export class UsersService {
   }
 
   async saveRefreshToken(id: string, refreshToken: string) {
-    await redis.set(`refresh:${id}`, refreshToken, "EX", 7 * 24 * 60 * 60);
+    await redis.set(this.refreshKey(id), refreshToken, "EX", 7 * 24 * 60 * 60);
   }
 
   async validRefreshToken(id: string, refreshToken: string) {
-    const savedRefreshToken = await redis.get(`refresh:${id}`);
+    const savedRefreshToken = await redis.get(this.refreshKey(id));
 
     if (savedRefreshToken !== refreshToken) {
-      await redis.del(`refresh:${id}`);
+      await redis.del(this.refreshKey(id));
 
       const errorMsg = "INVALID_REFRESH_TOKEN";
       logger.error(`Valid Refresh Token occurs Error. Casue : ${errorMsg}`);
@@ -49,7 +50,7 @@ export class UsersService {
   }
 
   async removeRefreshToken(id: string) {
-    await redis.del(`refresh:${id}`);
+    await redis.del(this.refreshKey(id));
   }
 
   async updatePassword(updatePasswordDto: UpdatePassword.Request, id: string) {
@@ -60,6 +61,6 @@ export class UsersService {
     const hashedNewPassword = await hashPassword(newPassword);
     await this.usersRepository.updatePasswordById(id, hashedNewPassword);
 
-    await redis.del(`refresh:${id}`);
+    await redis.del(this.refreshKey(id));
   }
 }
