@@ -7,7 +7,7 @@ export async function verifyPassword(
 ): Promise<void> {
   const valid = await bcrypt.compare(plain, hashed);
   if (!valid) {
-    const errorMsg = "Wrong Password";
+    const errorMsg = "INVALID_PASSWORD";
     throw new GlobalError(errorMsg, 401);
   }
 }
