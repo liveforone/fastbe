@@ -41,7 +41,7 @@ EOF
 # 3. TSCONFIG
 ########################################
 
-cat <<EOF > tsconfig.json
+cat <<EOF >tsconfig.json
 {
   "compilerOptions": {
     "target": "ES2023",
@@ -64,7 +64,7 @@ EOF
 # 4. VITEST CONFIG
 ########################################
 
-cat <<EOF > vitest.config.ts
+cat <<EOF >vitest.config.ts
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
@@ -88,7 +88,7 @@ EOF
 # 5. GITIGNORE
 ########################################
 
-cat <<EOF > .gitignore
+cat <<EOF >.gitignore
 # node_modules
 node_modules
 
@@ -114,7 +114,7 @@ EOF
 # 6. ENV
 ########################################
 
-cat <<EOF > .env
+cat <<EOF >.env
 DATABASE_URL="postgresql://postgres:ur_password@localhost:5432/ur_db_name?schema=public"
 
 REDIS_HOST=127.0.0.1
@@ -152,7 +152,7 @@ mkdir -p src/util
 # 8. CONFIG
 ########################################
 
-cat <<'EOF' > src/config/logger.ts
+cat <<'EOF' >src/config/logger.ts
 import pino from "pino";
 
 export const logger = pino({
@@ -160,7 +160,7 @@ export const logger = pino({
 });
 EOF
 
-cat <<'EOF' > src/config/redis.ts
+cat <<'EOF' >src/config/redis.ts
 import { Redis } from "ioredis";
 
 export const redis = new Redis({
@@ -174,7 +174,7 @@ EOF
 # 9. DATABASE
 ########################################
 
-cat <<'EOF' > src/database/init.sql
+cat <<'EOF' >src/database/init.sql
 CREATE TYPE role AS ENUM ('MEMBER', 'ADMIN');
 CREATE TYPE post_state AS ENUM ('ORIGINAL', 'EDITED');
 
@@ -199,7 +199,7 @@ CREATE TABLE post (
 CREATE INDEX idx_post_writer_id ON post(writer_id);
 EOF
 
-cat <<'EOF' > src/database/schema.ts
+cat <<'EOF' >src/database/schema.ts
 import { Generated, Selectable } from "kysely";
 
 export interface Database {
@@ -226,7 +226,7 @@ export interface PostTable {
 export type Post = Selectable<PostTable>;
 EOF
 
-cat <<'EOF' > src/database/database.ts
+cat <<'EOF' >src/database/database.ts
 import { Kysely, PostgresDialect } from "kysely";
 import { Pool } from "pg";
 import { Database } from "./schema.js";
@@ -263,7 +263,7 @@ export function createDB(): Kysely<Database> {
 }
 EOF
 
-cat <<'EOF' > src/database/base.repository.ts
+cat <<'EOF' >src/database/base.repository.ts
 import { Kysely } from "kysely";
 import { Database } from "./schema.js";
 import { withKyselyError } from "../errors/kysely.error.handler.js";
@@ -334,7 +334,7 @@ EOF
 # 10. ERRORS
 ########################################
 
-cat <<'EOF' > src/errors/database/db-error.enum.ts
+cat <<'EOF' >src/errors/database/db-error.enum.ts
 export enum DBErrorCode {
   DUPLICATE_RESOURCE = "DUPLICATE_RESOURCE",
   FOREIGN_KEY_VIOLATION = "FOREIGN_KEY_VIOLATION",
@@ -356,7 +356,7 @@ export enum DBErrorCode {
 }
 EOF
 
-cat <<'EOF' > src/errors/database/db-error.map.ts
+cat <<'EOF' >src/errors/database/db-error.map.ts
 import { DBErrorCode } from "./db-error.enum.js";
 
 export const DBErrorStatusMap: Record<DBErrorCode, number> = {
@@ -380,7 +380,7 @@ export const DBErrorStatusMap: Record<DBErrorCode, number> = {
 };
 EOF
 
-cat <<'EOF' > src/errors/global.error.ts
+cat <<'EOF' >src/errors/global.error.ts
 export class GlobalError extends Error {
   statusCode: number;
   constructor(message: string, statusCode = 400) {
@@ -391,7 +391,7 @@ export class GlobalError extends Error {
 }
 EOF
 
-cat <<'EOF' > src/errors/kysely.error.handler.ts
+cat <<'EOF' >src/errors/kysely.error.handler.ts
 import { logger } from "../config/logger.js";
 import { GlobalError } from "./global.error.js";
 import { DBErrorCode } from "./database/db-error.enum.js";
@@ -498,7 +498,7 @@ EOF
 # 11. SERVER
 ########################################
 
-cat <<'EOF' > src/server.ts
+cat <<'EOF' >src/server.ts
 import "dotenv/config";
 import Fastify from "fastify";
 import jwt from "@fastify/jwt";
@@ -665,10 +665,10 @@ bootstrap();
 EOF
 
 ########################################
-# 12. plugins 
+# 12. plugins
 ########################################
 
-cat <<'EOF' > src/plugins/auth.guard.ts
+cat <<'EOF' >src/plugins/auth.guard.ts
 import { FastifyRequest, FastifyReply } from "fastify";
 import { logger } from "../config/logger.js";
 
@@ -745,16 +745,16 @@ export async function authGuard(req: FastifyRequest, reply: FastifyReply) {
 EOF
 
 ########################################
-# 13. type 
+# 13. type
 ########################################
 
-cat <<'EOF' > src/type/authUser.type.ts
+cat <<'EOF' >src/type/authUser.type.ts
 export type AuthUser = {
   id: string;
 };
 EOF
 
-cat <<'EOF' > src/type/payload.type.ts
+cat <<'EOF' >src/type/payload.type.ts
 type TokenType = "access" | "refresh";
 
 interface BaseTokenPayload {
@@ -779,10 +779,10 @@ export function createTokenPayload<T extends TokenType>(
 EOF
 
 ########################################
-# 14. util 
+# 14. util
 ########################################
 
-cat <<'EOF' > src/util/password.util.ts
+cat <<'EOF' >src/util/password.util.ts
 import bcrypt from "bcrypt";
 import { GlobalError } from "../errors/global.error.js";
 
@@ -792,7 +792,7 @@ export async function verifyPassword(
 ): Promise<void> {
   const valid = await bcrypt.compare(plain, hashed);
   if (!valid) {
-    const errorMsg = "Wrong Password";
+    const errorMsg = "INVALID_PASSWORD";
     throw new GlobalError(errorMsg, 401);
   }
 }
@@ -806,7 +806,7 @@ EOF
 # 15. users api spec
 ########################################
 
-cat <<'EOF' > src/users/api/login.api.ts
+cat <<'EOF' >src/users/api/login.api.ts
 import z from "zod/v3";
 
 export namespace Login {
@@ -834,7 +834,7 @@ export namespace Login {
 }
 EOF
 
-cat <<'EOF' > src/users/api/logout.api.ts
+cat <<'EOF' >src/users/api/logout.api.ts
 export namespace Logout {
   export const PATH = "/logout";
   export const METHOD = "POST" as const;
@@ -850,7 +850,7 @@ export namespace Logout {
 }
 EOF
 
-cat <<'EOF' > src/users/api/refresh.api.ts
+cat <<'EOF' >src/users/api/refresh.api.ts
 export namespace Refresh {
   export const PATH = "/refresh";
   export const METHOD = "POST" as const;
@@ -870,7 +870,7 @@ export namespace Refresh {
 }
 EOF
 
-cat <<'EOF' > src/users/api/signup.api.ts
+cat <<'EOF' >src/users/api/signup.api.ts
 import z from "zod/v3";
 
 export namespace Signup {
@@ -890,7 +890,7 @@ export namespace Signup {
 }
 EOF
 
-cat <<'EOF' > src/users/api/update-password.api.ts
+cat <<'EOF' >src/users/api/update-password.api.ts
 import z from "zod/v3";
 
 export namespace UpdatePassword {
@@ -910,12 +910,11 @@ export namespace UpdatePassword {
 }
 EOF
 
-
 ########################################
 # 16. users controller
 ########################################
 
-cat <<'EOF' > src/users/controller/users.controller.ts
+cat <<'EOF' >src/users/controller/users.controller.ts
 import { FastifyInstance } from "fastify";
 import { authGuard } from "../../plugins/auth.guard.js";
 import {
@@ -1037,20 +1036,16 @@ export function createUsersController(usersService: UsersService) {
 EOF
 
 ########################################
-# 17. users repository 
+# 17. users repository
 ########################################
 
-cat <<'EOF' > src/users/repository/users.repository.ts
+cat <<'EOF' >src/users/repository/users.repository.ts
 import { randomUUID } from "node:crypto";
-import { hashPassword } from "../../util/password.util.js";
-import { Signup } from "../api/signup.api.js";
-import { withKyselyError } from "../../errors/kysely.error.handler.js";
 import { BaseRepository } from "../../database/base.repository.js";
 
 export class UsersRepository extends BaseRepository {
-  async saveUsers(signupDto: Signup.Request) {
-    const { username, password } = signupDto;
-    const hashedPassword = await hashPassword(password);
+  async saveUsers(signupDto: { username: string; hashedPassword: string }) {
+    const { username, hashedPassword } = signupDto;
     return this.executeOne(() =>
       this.db
         .insertInto("users")
@@ -1108,10 +1103,10 @@ export class UsersRepository extends BaseRepository {
 EOF
 
 ########################################
-# 18. users service 
+# 18. users service
 ########################################
 
-cat <<'EOF' > src/users/service/users.service.ts
+cat <<'EOF' >src/users/service/users.service.ts
 import { GlobalError } from "../../errors/global.error.js";
 import { redis } from "../../config/redis.js";
 import { logger } from "../../config/logger.js";
@@ -1124,8 +1119,13 @@ import { hashPassword, verifyPassword } from "../../util/password.util.js";
 
 export class UsersService {
   constructor(private readonly usersRepository: UsersRepository) {}
+  private refreshKey = (id: string) => `refresh:${id}`;
 
-  async signup(signupDto: Signup.Request): Promise<Users> {
+  async signup(signupRequest: Signup.Request): Promise<Users> {
+    const { username, password } = signupRequest;
+    const hashedPassword = await hashPassword(password);
+
+    const signupDto = { username, hashedPassword };
     const user = await this.usersRepository.saveUsers(signupDto);
     logger.info(`User was created. Username : ${signupDto.username}`);
     return user;
@@ -1139,16 +1139,16 @@ export class UsersService {
   }
 
   async saveRefreshToken(id: string, refreshToken: string) {
-    await redis.set(`refresh:${id}`, refreshToken, "EX", 7 * 24 * 60 * 60);
+    await redis.set(this.refreshKey(id), refreshToken, "EX", 7 * 24 * 60 * 60);
   }
 
   async validRefreshToken(id: string, refreshToken: string) {
-    const savedRefreshToken = await redis.get(`refresh:${id}`);
+    const savedRefreshToken = await redis.get(this.refreshKey(id));
 
     if (savedRefreshToken !== refreshToken) {
-      await redis.del(`refresh:${id}`);
+      await redis.del(this.refreshKey(id));
 
-      const errorMsg = "Mismatch Refresh Token";
+      const errorMsg = "INVALID_REFRESH_TOKEN";
       logger.error(`Valid Refresh Token occurs Error. Casue : ${errorMsg}`);
       throw new GlobalError(errorMsg, 401);
     }
@@ -1159,7 +1159,7 @@ export class UsersService {
   }
 
   async removeRefreshToken(id: string) {
-    await redis.del(`refresh:${id}`);
+    await redis.del(this.refreshKey(id));
   }
 
   async updatePassword(updatePasswordDto: UpdatePassword.Request, id: string) {
@@ -1170,16 +1170,16 @@ export class UsersService {
     const hashedNewPassword = await hashPassword(newPassword);
     await this.usersRepository.updatePasswordById(id, hashedNewPassword);
 
-    await redis.del(`refresh:${id}`);
+    await redis.del(this.refreshKey(id));
   }
 }
 EOF
 
 ########################################
-# 19. di container 
+# 19. di container
 ########################################
 
-cat <<'EOF' > src/di.container.ts
+cat <<'EOF' >src/di.container.ts
 import { FastifyInstance } from "fastify";
 import { createDB } from "./database/database.js";
 import { createPostController } from "./post/controller/post.controller.js";
@@ -1205,10 +1205,10 @@ export function createDIContainer(app: FastifyInstance) {
 EOF
 
 ########################################
-# 20. users test 
+# 20. users test
 ########################################
 
-cat <<'EOF' > src/__test__/users.service.test.ts
+cat <<'EOF' >src/__test__/users.service.test.ts
 import { UsersService } from "../users/service/users.service.js";
 import bcrypt from "bcrypt";
 import { redis } from "../config/redis.js";
@@ -1334,9 +1334,9 @@ describe("AuthService Unit Test(Real DB / Redis)", () => {
 EOF
 
 ########################################
-# 21. post api spec 
+# 21. post api spec
 ########################################
-cat <<'EOF' > src/post/api/dto/post-detail.dto.ts 
+cat <<'EOF' >src/post/api/dto/post-detail.dto.ts
 export interface PostDetailDto {
   readonly id: bigint;
   readonly title: string;
@@ -1347,7 +1347,7 @@ export interface PostDetailDto {
 }
 EOF
 
-cat <<'EOF' > src/post/api/dto/post-page.dto.ts
+cat <<'EOF' >src/post/api/dto/post-page.dto.ts
 import { PostSummaryDto } from "./post-summary.dto.js";
 
 export interface PostPageDto {
@@ -1358,7 +1358,7 @@ export interface PostPageDto {
 }
 EOF
 
-cat <<'EOF' > src/post/api/dto/post-summary.dto.ts
+cat <<'EOF' >src/post/api/dto/post-summary.dto.ts
 export interface PostSummaryDto {
   readonly id: bigint;
   readonly title: string;
@@ -1367,7 +1367,7 @@ export interface PostSummaryDto {
 }
 EOF
 
-cat <<'EOF' > src/post/api/create-post.api.ts
+cat <<'EOF' >src/post/api/create-post.api.ts
 import z from "zod/v3";
 
 export namespace CreatePost {
@@ -1387,7 +1387,7 @@ export namespace CreatePost {
 }
 EOF
 
-cat <<'EOF' > src/post/api/post-belong-writer.api.ts
+cat <<'EOF' >src/post/api/post-belong-writer.api.ts
 import { PostPageDto } from "./dto/post-page.dto.js";
 
 export namespace PostBelongWriter {
@@ -1399,7 +1399,7 @@ export namespace PostBelongWriter {
 }
 EOF
 
-cat <<'EOF' > src/post/api/post-detail.api.ts
+cat <<'EOF' >src/post/api/post-detail.api.ts
 import { PostDetailDto } from "./dto/post-detail.dto.js";
 
 export namespace PostDetail {
@@ -1414,7 +1414,7 @@ export namespace PostDetail {
 }
 EOF
 
-cat <<'EOF' > src/post/api/post-home.api.ts
+cat <<'EOF' >src/post/api/post-home.api.ts
 import { PostPageDto } from "./dto/post-page.dto.js";
 
 export namespace PostHome {
@@ -1426,7 +1426,7 @@ export namespace PostHome {
 }
 EOF
 
-cat <<'EOF' > src/post/api/post-search.api.ts
+cat <<'EOF' >src/post/api/post-search.api.ts
 import { PostPageDto } from "./dto/post-page.dto.js";
 
 export namespace PostSearch {
@@ -1438,7 +1438,7 @@ export namespace PostSearch {
 }
 EOF
 
-cat <<'EOF' > src/post/api/remove-post.api.ts
+cat <<'EOF' >src/post/api/remove-post.api.ts
 export namespace RemovePost {
   export const PATH = "/:id";
   export const METHOD = "DELETE" as const;
@@ -1450,7 +1450,7 @@ export namespace RemovePost {
 }
 EOF
 
-cat <<'EOF' > src/post/api/update-post.api.ts
+cat <<'EOF' >src/post/api/update-post.api.ts
 import z from "zod/v3";
 
 export namespace UpdatePost {
@@ -1471,10 +1471,10 @@ export namespace UpdatePost {
 EOF
 
 ########################################
-# 22. post controller 
+# 22. post controller
 ########################################
 
-cat <<'EOF' > src/post/controller/constant/post.controller.constant.ts
+cat <<'EOF' >src/post/controller/constant/post.controller.constant.ts
 export interface IPostParams {
   id: bigint;
 }
@@ -1489,7 +1489,7 @@ export interface IPostSearchQuerystring {
 }
 EOF
 
-cat <<'EOF' > src/post/controller/post.controller.ts
+cat <<'EOF' >src/post/controller/post.controller.ts
 import { FastifyInstance } from "fastify";
 import { authGuard } from "../../plugins/auth.guard.js";
 import { PostService } from "../service/post.service.js";
@@ -1607,10 +1607,10 @@ export function createPostController(postService: PostService) {
 EOF
 
 ########################################
-# 23. post repository 
+# 23. post repository
 ########################################
 
-cat <<'EOF' > src/post/repository/post.repository.ts
+cat <<'EOF' >src/post/repository/post.repository.ts
 import { CreatePost } from "../api/create-post.api.js";
 import { UpdatePost } from "../api/update-post.api.js";
 import { BaseRepository } from "../../database/base.repository.js";
@@ -1727,10 +1727,10 @@ export class PostRepository extends BaseRepository {
 EOF
 
 ########################################
-# 24. post service 
+# 24. post service
 ########################################
 
-cat <<'EOF' > src/post/service/post.service.ts
+cat <<'EOF' >src/post/service/post.service.ts
 import { CreatePost } from "../api/create-post.api.js";
 import { PostDetailDto } from "../api/dto/post-detail.dto.js";
 import { PostBelongWriter } from "../api/post-belong-writer.api.js";
@@ -1831,10 +1831,10 @@ export class PostService {
 EOF
 
 ########################################
-# 25. post test 
+# 25. post test
 ########################################
 
-cat <<'EOF' > src/__test__/post.service.test.ts
+cat <<'EOF' >src/__test__/post.service.test.ts
 import { Signup } from "../users/api/signup.api.js";
 import { redis } from "../config/redis.js";
 import { GlobalError } from "../errors/global.error.js";
@@ -1942,3 +1942,4 @@ describe("PostService Unit Test(Real DB / Redis)", () => {
 EOF
 
 echo "✅ DONE."
+
