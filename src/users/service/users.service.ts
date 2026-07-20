@@ -38,7 +38,7 @@ export class UsersService {
     if (savedRefreshToken !== refreshToken) {
       await redis.del(`refresh:${id}`);
 
-      const errorMsg = "Mismatch Refresh Token";
+      const errorMsg = "INVALID_REFRESH_TOKEN";
       logger.error(`Valid Refresh Token occurs Error. Casue : ${errorMsg}`);
       throw new GlobalError(errorMsg, 401);
     }
