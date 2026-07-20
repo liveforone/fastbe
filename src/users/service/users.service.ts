@@ -11,7 +11,11 @@ import { hashPassword, verifyPassword } from "../../util/password.util.js";
 export class UsersService {
   constructor(private readonly usersRepository: UsersRepository) {}
 
-  async signup(signupDto: Signup.Request): Promise<Users> {
+  async signup(signupRequest: Signup.Request): Promise<Users> {
+    const { username, password } = signupRequest;
+    const hashedPassword = await hashPassword(password);
+
+    const signupDto = { username, hashedPassword };
     const user = await this.usersRepository.saveUsers(signupDto);
     logger.info(`User was created. Username : ${signupDto.username}`);
     return user;

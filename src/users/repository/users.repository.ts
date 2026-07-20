@@ -1,13 +1,9 @@
 import { randomUUID } from "node:crypto";
-import { hashPassword } from "../../util/password.util.js";
-import { Signup } from "../api/signup.api.js";
-import { withKyselyError } from "../../errors/kysely.error.handler.js";
 import { BaseRepository } from "../../database/base.repository.js";
 
 export class UsersRepository extends BaseRepository {
-  async saveUsers(signupDto: Signup.Request) {
-    const { username, password } = signupDto;
-    const hashedPassword = await hashPassword(password);
+  async saveUsers(signupDto: { username: string; hashedPassword: string }) {
+    const { username, hashedPassword } = signupDto;
     return this.executeOne(() =>
       this.db
         .insertInto("users")
