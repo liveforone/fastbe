@@ -4,10 +4,6 @@ import { PostService } from "../service/post.service.js";
 import { CreatePost } from "../api/create-post.api.js";
 import { AuthUser } from "../../type/authUser.type.js";
 import { UpdatePost } from "../api/update-post.api.js";
-import {
-  IPostPageQuerystring,
-  IPostSearchQuerystring,
-} from "./constant/post.controller.constant.js";
 import { RemovePost } from "../api/remove-post.api.js";
 import { PostDetail } from "../api/post-detail.api.js";
 import { PostHome } from "../api/post-home.api.js";

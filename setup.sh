@@ -1388,6 +1388,7 @@ export namespace CreatePost {
 EOF
 
 cat <<'EOF' >src/post/api/post-belong-writer.api.ts
+import z from "zod/v3";
 import { PostPageDto } from "./dto/post-page.dto.js";
 
 export namespace PostBelongWriter {
@@ -1395,17 +1396,28 @@ export namespace PostBelongWriter {
   export const METHOD = "GET" as const;
   export const STATUS = 200 as const;
 
+  export const QuerySchema = z.object({
+    "last-id": z.coerce.bigint().optional(),
+  });
+  export type Query = z.infer<typeof QuerySchema>;
+
   export type Response = PostPageDto;
 }
 EOF
 
 cat <<'EOF' >src/post/api/post-detail.api.ts
+import z from "zod/v3";
 import { PostDetailDto } from "./dto/post-detail.dto.js";
 
 export namespace PostDetail {
   export const PATH = "/:id";
   export const METHOD = "GET" as const;
   export const STATUS = 200 as const;
+
+  export const ParamsSchema = z.object({
+    id: z.coerce.bigint(),
+  });
+  export type Params = z.infer<typeof ParamsSchema>;
 
   export interface Response {
     readonly ok: boolean;
@@ -1415,6 +1427,7 @@ export namespace PostDetail {
 EOF
 
 cat <<'EOF' >src/post/api/post-home.api.ts
+import z from "zod/v3";
 import { PostPageDto } from "./dto/post-page.dto.js";
 
 export namespace PostHome {
@@ -1422,11 +1435,17 @@ export namespace PostHome {
   export const METHOD = "GET" as const;
   export const STATUS = 200 as const;
 
+  export const QuerySchema = z.object({
+    "last-id": z.coerce.bigint().optional(),
+  });
+  export type Query = z.infer<typeof QuerySchema>;
+
   export type Response = PostPageDto;
 }
 EOF
 
 cat <<'EOF' >src/post/api/post-search.api.ts
+import z from "zod/v3";
 import { PostPageDto } from "./dto/post-page.dto.js";
 
 export namespace PostSearch {
@@ -1434,15 +1453,28 @@ export namespace PostSearch {
   export const METHOD = "GET" as const;
   export const STATUS = 200 as const;
 
+  export const QuerySchema = z.object({
+    keyword: z.string(),
+    "last-id": z.coerce.bigint().optional(),
+  });
+  export type Query = z.infer<typeof QuerySchema>;
+
   export type Response = PostPageDto;
 }
 EOF
 
 cat <<'EOF' >src/post/api/remove-post.api.ts
+import z from "zod/v3";
+
 export namespace RemovePost {
   export const PATH = "/:id";
   export const METHOD = "DELETE" as const;
   export const STATUS = 200 as const;
+
+  export const ParamsSchema = z.object({
+    id: z.coerce.bigint(),
+  });
+  export type Params = z.infer<typeof ParamsSchema>;
 
   export interface Response {
     ok: true;
@@ -1463,6 +1495,11 @@ export namespace UpdatePost {
     content: z.string().min(1),
   });
   export type Request = z.infer<typeof RequestSchema>;
+
+  export const ParamsSchema = z.object({
+    id: z.coerce.bigint(),
+  });
+  export type Params = z.infer<typeof ParamsSchema>;
 
   export interface Response {
     ok: true;
@@ -1496,11 +1533,6 @@ import { PostService } from "../service/post.service.js";
 import { CreatePost } from "../api/create-post.api.js";
 import { AuthUser } from "../../type/authUser.type.js";
 import { UpdatePost } from "../api/update-post.api.js";
-import {
-  IPostPageQuerystring,
-  IPostParams,
-  IPostSearchQuerystring,
-} from "./constant/post.controller.constant.js";
 import { RemovePost } from "../api/remove-post.api.js";
 import { PostDetail } from "../api/post-detail.api.js";
 import { PostHome } from "../api/post-home.api.js";
@@ -1521,84 +1553,96 @@ export function createPostController(postService: PostService) {
       },
     );
 
-    app.put<{ Body: UpdatePost.Request; Params: IPostParams }>(
-      "/:id",
+    app.put<{ Body: UpdatePost.Request; Params: UpdatePost.Params }>(
+      UpdatePost.PATH,
       { preHandler: authGuard },
       async (req, reply) => {
         const parsedBody = UpdatePost.RequestSchema.parse(req.body);
-        const { id } = req.params;
+        const params = UpdatePost.ParamsSchema.parse(req.params);
         const userId = (req.user as AuthUser).id;
 
-        await postService.updatePost(parsedBody, id, userId);
+        await postService.updatePost(parsedBody, params.id, userId);
 
         reply.send({ ok: true } satisfies UpdatePost.Response);
       },
     );
 
-    app.delete<{ Params: IPostParams }>(
+    app.delete<{ Params: RemovePost.Params }>(
       RemovePost.PATH,
       { preHandler: authGuard },
       async (req, reply) => {
-        const { id } = req.params;
+        const params = RemovePost.ParamsSchema.parse(req.params);
         const userId = (req.user as AuthUser).id;
 
-        await postService.removePost(id, userId);
+        await postService.removePost(params.id, userId);
 
         reply.send({ ok: true } satisfies RemovePost.Response);
       },
     );
 
     // app.get<{ Params: { id: bigint } }> is Same.
-    app.get<{ Params: IPostParams }>(PostDetail.PATH, async (req, reply) => {
-      const { id } = req.params;
-      const post = await postService.getPostById(id);
+    app.get<{ Params: PostDetail.Params }>(
+      PostDetail.PATH,
+      async (req, reply) => {
+        const params = PostDetail.ParamsSchema.parse(req.params);
+        const post = await postService.getPostById(params.id);
 
-      reply.send({
-        ok: true,
-        postDetailDto: post,
-      } satisfies PostDetail.Response);
-    });
+        reply.send({
+          ok: true,
+          postDetailDto: post,
+        } satisfies PostDetail.Response);
+      },
+    );
 
     // app.get<{ Querystrig: { "last-id"?: bigint } }> is Same.
-    app.get<{ Querystring: IPostPageQuerystring }>(
+    app.get<{ Querystring: PostHome.Query }>(
       PostHome.PATH,
       async (req, reply) => {
-        const lastId = req.query["last-id"]
-          ? BigInt(req.query["last-id"])
-          : undefined;
+        const query = PostHome.QuerySchema.parse(req.query);
+        /**
+         * If you use a querystring as shown in the comment above, extract it as follows.
+         * const lastId = req.query["last-id"] ? BigInt(req.query["last-id"]) : undefined;
+         * const postPages = await postService.getAllPostPages(lastId);
+         */
 
-        const postPages = await postService.getAllPostPages(lastId);
+        const postPages = await postService.getAllPostPages(query["last-id"]);
+
         reply.send(postPages);
       },
     );
 
-    app.get<{ Querystring: IPostPageQuerystring }>(
+    app.get<{ Querystring: PostBelongWriter.Query }>(
       PostBelongWriter.PATH,
       { preHandler: authGuard },
       async (req, reply) => {
-        const lastId = req.query["last-id"]
-          ? BigInt(req.query["last-id"])
-          : undefined;
+        const query = PostBelongWriter.QuerySchema.parse(req.query);
         const userId = (req.user as AuthUser).id;
 
         const postPages = await postService.getPostPagesByWriter(
           userId,
-          lastId,
+          query["last-id"],
         );
         reply.send(postPages);
       },
     );
 
     // app.get<{ Querystrig: { keyword: string; "last-id"?: bigint } }> is Same.
-    app.get<{ Querystring: IPostSearchQuerystring }>(
+    app.get<{ Querystring: PostSearch.Query }>(
       PostSearch.PATH,
       async (req, reply) => {
-        const { keyword } = req.query;
-        const lastId = req.query["last-id"]
-          ? BigInt(req.query["last-id"])
-          : undefined;
+        /**
+         * If you use a querystring as shown in the comment above, extract it as follows.
+         * const { keyword } = req.query;
+         * const lastId = req.query["last-id"]
+         * ? BigInt(req.query["last-id"])
+         * : undefined;
+         */
+        const query = PostSearch.QuerySchema.parse(req.query);
 
-        const postPages = await postService.searchPostPages(keyword, lastId);
+        const postPages = await postService.searchPostPages(
+          query.keyword,
+          query["last-id"],
+        );
         reply.send(postPages);
       },
     );
@@ -1942,4 +1986,3 @@ describe("PostService Unit Test(Real DB / Redis)", () => {
 EOF
 
 echo "✅ DONE."
-
