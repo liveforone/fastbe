@@ -11,6 +11,11 @@ export namespace UpdatePost {
   });
   export type Request = z.infer<typeof RequestSchema>;
 
+  export const ParamsSchema = z.object({
+    id: z.coerce.bigint(),
+  });
+  export type Params = z.infer<typeof ParamsSchema>;
+
   export interface Response {
     ok: true;
   }

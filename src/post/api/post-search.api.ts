@@ -1,9 +1,16 @@
+import z from "zod/v3";
 import { PostPageDto } from "./dto/post-page.dto.js";
 
 export namespace PostSearch {
   export const PATH = "/search";
   export const METHOD = "GET" as const;
   export const STATUS = 200 as const;
+
+  export const QuerySchema = z.object({
+    keyword: z.string(),
+    "last-id": z.coerce.bigint().optional(),
+  });
+  export type Query = z.infer<typeof QuerySchema>;
 
   export type Response = PostPageDto;
 }
